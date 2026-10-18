@@ -150,27 +150,6 @@ fun PremiumGeometricBackground(modifier: Modifier = Modifier) {
         drawPath(path4, color = strokeColor, style = Stroke(strokeWidth))
         drawPath(path5, color = strokeColor, style = Stroke(strokeWidth))
 
-        // Warm champagne ambient glow — top right
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(HaGold.copy(alpha = 0.10f), HaGold.copy(alpha = 0.03f), Color.Transparent),
-                center = Offset(width * 0.95f, height * 0.02f),
-                radius = width * 0.95f
-            ),
-            radius = width * 0.95f,
-            center = Offset(width * 0.95f, height * 0.02f)
-        )
-        // Faint bronze glow — bottom left for depth
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(HaGoldDeep.copy(alpha = 0.06f), Color.Transparent),
-                center = Offset(0f, height * 0.92f),
-                radius = width * 0.8f
-            ),
-            radius = width * 0.8f,
-            center = Offset(0f, height * 0.92f)
-        )
-
         // Signature gold edge light
         val edgeStart = Offset(width * 0.6f, height * 0.9f)
         val edgeEnd = Offset(width, height * 0.75f)
@@ -1105,9 +1084,7 @@ fun AlarmMainScreen(
                             },
                             modifier = Modifier
                                 .size(44.dp)
-                                .clip(CircleShape)
-                                .background(HaSurface.copy(alpha = 0.85f))
-                                .border(1.dp, HaGold.copy(alpha = 0.22f), CircleShape)
+                                .ha3DOrb()
                         ) {
                             Icon(Icons.Default.Settings, contentDescription = "Settings", tint = HaGoldLight, modifier = Modifier.size(20.dp))
                         }
