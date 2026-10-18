@@ -63,6 +63,7 @@ object PermissionUtils {
                 context.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
             ) {
                 try {
+                    OverlayGuideActivity.prefetch(context)
                     OverlayGuideActivity.start(context)
                     return
                 } catch (_: Exception) { /* fall back to the plain settings screen */ }

@@ -644,6 +644,8 @@ class MainActivity : ComponentActivity() {
         } catch (_: Exception) {}
         // Back from the overlay settings without granting -> close the floating guide.
         OverlayGuideActivity.onHostResumed()
+        // Prepare the guide's icons/names ahead of time so it opens fully drawn.
+        if (!PermissionUtils.canDrawOverlays(this)) OverlayGuideActivity.prefetch(this)
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {

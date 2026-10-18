@@ -116,6 +116,7 @@ class OverlayGuideActivity : ComponentActivity() {
     private val stepIndex = mutableIntStateOf(0)
     private val granted = mutableStateOf(false)
     private val runId = mutableIntStateOf(0)
+    private val revealed = mutableStateOf(false)
     private var started = false
     private var settingsLaunchedAt = 0L
     private lateinit var guide: OverlayGuide
@@ -127,6 +128,7 @@ class OverlayGuideActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         current = WeakReference(this)
+        prefetch(this)
         guide = OverlayGuide.forThisDevice()
 
         tts = TextToSpeech(this) { status ->
@@ -172,21 +174,34 @@ class OverlayGuideActivity : ComponentActivity() {
             val step by stepIndex
             val done by granted
             val run by runId
-            val mock by produceState<MockData?>(initialValue = null) {
-                value = withContext(Dispatchers.Default) { loadMockData() }
+            val shown by revealed
+            val mock by produceState(initialValue = cachedMock) {
+                if (value == null) {
+                    value = withContext(Dispatchers.Default) {
+                        var waited = 0
+                        while (cachedMock == null && prefetching && waited < 2000) { delay(25); waited += 25 }
+                        cachedMock ?: buildMockData(applicationContext).also { storeMock(it) }
+                    }
+                }
             }
-            OverlayGuideScreen(
-                guide = guide,
-                mock = mock,
-                step = step,
-                granted = done,
-                compact = pip,
-                onOpenSettings = { openSettings() },
-                onClose = { returnToApp() }
-            )
+            if (shown) {
+                OverlayGuideScreen(
+                    guide = guide,
+                    mock = mock,
+                    step = step,
+                    granted = done,
+                    compact = pip,
+                    onOpenSettings = { openSettings() },
+                    onClose = { returnToApp() }
+                )
+            } else {
+                // Launch moment: plain background only (no half-loaded guide flashing on screen).
+                Box(modifier = Modifier.fillMaxSize().background(HaObsidian))
+            }
 
             // Narration: walk through the steps, each one spoken and animated.
-            LaunchedEffect(run) {
+            LaunchedEffect(run, shown) {
+                if (!shown) return@LaunchedEffect
                 withTimeoutOrNull(3000) { while (!ttsReady) delay(100) }
                 delay(1100) // let the settings screen appear first
                 var cycle = 0
@@ -249,8 +264,14 @@ class OverlayGuideActivity : ComponentActivity() {
         }
     }
 
-    private fun startFlow() {
+    private fun startFlow(waitedMs: Long = 0L) {
         if (isFinishing || isDestroyed) return
+        if (cachedMock == null && waitedMs < 1500L) {
+            // icons/names not ready yet: wait a moment so nothing pops in later
+            prefetch(this)
+            window.decorView.postDelayed({ startFlow(waitedMs + 50L) }, 50L)
+            return
+        }
         if (inPip.value) {
             launchSettings()
             return
@@ -265,6 +286,7 @@ class OverlayGuideActivity : ComponentActivity() {
         }
         // No floating window on this phone (or PiP turned off for the app):
         // open the screen directly with a short written hint.
+        revealed.value = true
         launchSettings()
         Toast.makeText(this, guide.shortHint, Toast.LENGTH_LONG).show()
         finishAndRemoveTask()
@@ -342,39 +364,10 @@ class OverlayGuideActivity : ComponentActivity() {
         return true
     }
 
-    /** Real icon + name of High Alarm and of the apps around it in the system list. */
-    private fun loadMockData(): MockData {
-        val pm = packageManager
-        val selfName = try { applicationInfo.loadLabel(pm).toString() } catch (_: Exception) { "High Alarm" }
-        val selfIcon = try {
-            pm.getApplicationIcon(packageName).toBitmap(144, 144).asImageBitmap()
-        } catch (_: Exception) { null }
-
-        val others: List<Pair<ResolveInfo, String>> = try {
-            @Suppress("DEPRECATION")
-            pm.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER), 0)
-                .filter { it.activityInfo != null && it.activityInfo.packageName != packageName }
-                .distinctBy { it.activityInfo.packageName }
-                .map { it to it.loadLabel(pm).toString().trim() }
-                .filter { it.second.isNotBlank() }
-                .sortedBy { it.second.lowercase(Locale.ROOT) }
-        } catch (_: Exception) { emptyList() }
-
-        val key = selfName.lowercase(Locale.ROOT)
-        fun icon(ri: ResolveInfo): ImageBitmap? =
-            try { ri.loadIcon(pm).toBitmap(96, 96).asImageBitmap() } catch (_: Exception) { null }
-        val before = others.filter { it.second.lowercase(Locale.ROOT) < key }.takeLast(4)
-            .map { MockApp(it.second, icon(it.first)) }
-            .ifEmpty { listOf("Calculator", "Calendar", "Camera", "Gallery").map { MockApp(it, null) } }
-        val after = others.filter { it.second.lowercase(Locale.ROOT) >= key }.take(4)
-            .map { MockApp(it.second, icon(it.first)) }
-            .ifEmpty { listOf("Messages", "Music", "Notes", "Phone").map { MockApp(it, null) } }
-        return MockData(selfName, selfIcon, before, after)
-    }
-
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         inPip.value = isInPictureInPictureMode
+        if (isInPictureInPictureMode) revealed.value = true
     }
 
     override fun onUserLeaveHint() {
@@ -407,6 +400,60 @@ class OverlayGuideActivity : ComponentActivity() {
 
     companion object {
         private var current: WeakReference<OverlayGuideActivity>? = null
+
+        // Icons + names are prepared ahead of time (while the app is open),
+        // so the guide shows them the instant it appears.
+        @Volatile private var cachedMock: MockData? = null
+        @Volatile private var cachedAt = 0L
+        @Volatile private var prefetching = false
+
+        private fun storeMock(d: MockData) {
+            cachedMock = d
+            cachedAt = SystemClock.elapsedRealtime()
+        }
+
+        /** Warm the guide's data in the background (cheap; safe to call often). */
+        fun prefetch(context: Context) {
+            if (prefetching) return
+            if (cachedMock != null && SystemClock.elapsedRealtime() - cachedAt < 5 * 60_000L) return
+            val app = context.applicationContext
+            prefetching = true
+            Thread {
+                try { storeMock(buildMockData(app)) } catch (_: Throwable) { } finally { prefetching = false }
+            }.apply { name = "overlay-guide-prefetch" }.start()
+        }
+
+        /** Real icon + name of High Alarm and of the apps around it in the system list. */
+        private fun buildMockData(context: Context): MockData {
+            val pm = context.packageManager
+            val pkg = context.packageName
+            val selfName = try { context.applicationInfo.loadLabel(pm).toString() } catch (_: Exception) { "High Alarm" }
+            val selfIcon = try {
+                pm.getApplicationIcon(pkg).toBitmap(144, 144).asImageBitmap()
+            } catch (_: Exception) { null }
+
+            val others: List<Pair<ResolveInfo, String>> = try {
+                @Suppress("DEPRECATION")
+                pm.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER), 0)
+                    .filter { it.activityInfo != null && it.activityInfo.packageName != pkg }
+                    .distinctBy { it.activityInfo.packageName }
+                    .map { it to it.loadLabel(pm).toString().trim() }
+                    .filter { it.second.isNotBlank() }
+                    .sortedBy { it.second.lowercase(Locale.ROOT) }
+            } catch (_: Exception) { emptyList() }
+
+            val key = selfName.lowercase(Locale.ROOT)
+            fun icon(ri: ResolveInfo): ImageBitmap? =
+                try { ri.loadIcon(pm).toBitmap(96, 96).asImageBitmap().also { it.prepareToDraw() } } catch (_: Exception) { null }
+            val before = others.filter { it.second.lowercase(Locale.ROOT) < key }.takeLast(4)
+                .map { MockApp(it.second, icon(it.first)) }
+                .ifEmpty { listOf("Calculator", "Calendar", "Camera", "Gallery").map { MockApp(it, null) } }
+            val after = others.filter { it.second.lowercase(Locale.ROOT) >= key }.take(4)
+                .map { MockApp(it.second, icon(it.first)) }
+                .ifEmpty { listOf("Messages", "Music", "Notes", "Phone").map { MockApp(it, null) } }
+            selfIcon?.prepareToDraw()
+            return MockData(selfName, selfIcon, before, after)
+        }
 
         fun start(context: Context) {
             context.startActivity(
@@ -568,7 +615,7 @@ private fun OverlayGuideScreen(
 ) {
     val current = guide.steps[step.coerceIn(0, guide.steps.lastIndex)]
     val visual = if (granted) GuideVisual.FlipSwitch else current.visual
-    val data = mock ?: MockData.Placeholder
+    val data = mock
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -583,7 +630,7 @@ private fun OverlayGuideScreen(
                         .fillMaxWidth()
                         .ha3DInset(RoundedCornerShape(10.dp))
                 ) {
-                    key(step, granted) {
+                    if (data != null) key(step, granted) {
                         SettingsMock(guide, data, visual, granted, compact = true, modifier = Modifier.fillMaxSize())
                     }
                 }
@@ -639,7 +686,7 @@ private fun OverlayGuideScreen(
                         .clip(RoundedCornerShape(22.dp))
                         .background(MockScreenBg)
                 ) {
-                    key(step, granted) {
+                    if (data != null) key(step, granted) {
                         SettingsMock(guide, data, visual, granted, compact = false, modifier = Modifier.fillMaxSize())
                     }
                 }
