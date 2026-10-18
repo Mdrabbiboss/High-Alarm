@@ -185,7 +185,7 @@ fun PremiumSubscriptionScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 24.dp)
-                                .padding(top = 18.dp, bottom = 96.dp),
+                                .padding(top = 12.dp, bottom = 30.dp),
                             horizontalAlignment = Alignment.Start
                         ) {
                             // Contextual message if from locked challenge

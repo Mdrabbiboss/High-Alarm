@@ -5,6 +5,8 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -14,34 +16,31 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.platform.LocalContext
 import kotlin.math.PI
 import kotlin.math.sin
 import kotlin.random.Random
 
 /**
- * Living sunrise scene for the Pro page.
+ * Quiet-luxury sunrise for the Pro page.
  *
- *  - A polished golden sun with a slowly turning corona and breathing glow
- *  - Three mountain ridges with rim light, each at a different depth
- *  - Twinkling stars and golden dust drifting upward
- *  - "4D" parallax: tilt the phone and every layer shifts by its depth
- *  - Fades into the page colour at the bottom (no hard edge)
+ * Deliberately minimal (no cartoon rays or bokeh): a polished half-sun rising
+ * over a hairline horizon, fine concentric rings with a slow ripple, its soft
+ * reflection, and a handful of faint stars. On open the sun rises into place;
+ * tilting the phone shifts the layers by depth (parallax).
  */
 @Composable
 fun PremiumSunriseBackground(
@@ -51,7 +50,7 @@ fun PremiumSunriseBackground(
 ) {
     val context = LocalContext.current
 
-    // ---- Tilt (parallax) ---------------------------------------------------
+    // ---- Tilt parallax ------------------------------------------------------
     var tiltX by remember { mutableFloatStateOf(0f) }
     var tiltY by remember { mutableFloatStateOf(0f) }
     DisposableEffect(reducedMotion) {
@@ -60,11 +59,10 @@ fun PremiumSunriseBackground(
         val acc = sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         val listener = object : SensorEventListener {
             override fun onSensorChanged(e: SensorEvent) {
-                // gravity components -> -1..1, heavily smoothed
                 val tx = (-e.values[0] / 5f).coerceIn(-1f, 1f)
                 val ty = ((e.values[1] - 6.5f) / 5f).coerceIn(-1f, 1f)
-                tiltX += (tx - tiltX) * 0.08f
-                tiltY += (ty - tiltY) * 0.08f
+                tiltX += (tx - tiltX) * 0.06f
+                tiltY += (ty - tiltY) * 0.06f
             }
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
         }
@@ -72,181 +70,144 @@ fun PremiumSunriseBackground(
         onDispose { sm.unregisterListener(listener) }
     }
 
-    // ---- Time ----------------------------------------------------------------
+    // ---- Sunrise on open ----------------------------------------------------
+    val rise = remember { Animatable(if (reducedMotion) 1f else 0f) }
+    LaunchedEffect(Unit) {
+        if (!reducedMotion) rise.animateTo(1f, tween(2600, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f)))
+    }
+
+    // ---- Ambient motion -----------------------------------------------------
     val time = rememberInfiniteTransition(label = "sunrise")
-    val drift by time.animateFloat(
-        0f, 1f,
-        infiniteRepeatable(tween(26000, easing = LinearEasing), RepeatMode.Restart),
-        label = "drift"
+    val ripple by time.animateFloat(
+        0f, 1f, infiniteRepeatable(tween(5200, easing = LinearEasing), RepeatMode.Restart), label = "ripple"
     )
-    val corona by time.animateFloat(
-        0f, 360f,
-        infiniteRepeatable(tween(60000, easing = LinearEasing), RepeatMode.Restart),
-        label = "corona"
+    val twinkle by time.animateFloat(
+        0f, 1f, infiniteRepeatable(tween(9000, easing = LinearEasing), RepeatMode.Restart), label = "twinkle"
     )
     val breath by time.animateFloat(
-        0f, 1f,
-        infiniteRepeatable(tween(4200, easing = LinearEasing), RepeatMode.Reverse),
-        label = "breath"
+        0f, 1f, infiniteRepeatable(tween(4800, easing = LinearEasing), RepeatMode.Reverse), label = "breath"
     )
-    val d = if (reducedMotion) 0f else drift
-    val c = if (reducedMotion) 0f else corona
-    val b = if (reducedMotion) 0.5f else breath
+    val rp = if (reducedMotion) 0.35f else ripple
+    val tw = if (reducedMotion) 0f else twinkle
+    val br = if (reducedMotion) 0.5f else breath
 
     val stars = remember {
-        val r = Random(7)
-        List(46) { floatArrayOf(r.nextFloat(), r.nextFloat() * 0.55f, 0.6f + r.nextFloat() * 1.4f, r.nextFloat()) }
-    }
-    val dust = remember {
-        val r = Random(11)
-        List(26) { floatArrayOf(r.nextFloat(), r.nextFloat(), 0.4f + r.nextFloat() * 0.9f, 1.2f + r.nextFloat() * 2.4f, r.nextFloat()) }
+        val r = Random(21)
+        List(22) { floatArrayOf(r.nextFloat(), 0.05f + r.nextFloat() * 0.45f, 0.5f + r.nextFloat() * 0.9f, r.nextFloat()) }
     }
 
-    Canvas(modifier = modifier) {
+    Canvas(modifier = modifier.clipToBounds()) {
         val w = size.width
         val h = size.height
-        val px = tiltX * 1f
-        val py = tiltY * 1f
-        fun shift(depth: Float) = Offset(px * depth * density * 18f, py * depth * density * 10f)
+        fun shift(depth: Float) = Offset(tiltX * depth * density * 14f, tiltY * depth * density * 8f)
 
-        // 1. Night-to-dawn sky
+        // 1. Sky: near-black with the faintest warmth toward the horizon
         drawRect(
             Brush.verticalGradient(
-                0f to Color(0xFF050508),
-                0.45f to Color(0xFF0D0B10),
-                0.78f to Color(0xFF231A10),
-                1f to Color(0xFF2E2112)
+                0f to Color(0xFF050507),
+                0.55f to Color(0xFF0A090C),
+                1f to Color(0xFF15110C)
             )
         )
 
-        // 2. Stars (far: almost no parallax)
-        translate(shift(0.15f).x, shift(0.15f).y) {
-            stars.forEach { s ->
-                val tw = 0.35f + 0.65f * ((sin((d * 6f + s[3]) * 2f * PI.toFloat()) + 1f) / 2f)
+        // 2. Stars — few, tiny, slow twinkle
+        val so = shift(0.2f)
+        stars.forEach { s ->
+            val a = 0.25f + 0.55f * ((sin((tw * 2f + s[3]) * 2f * PI.toFloat()) + 1f) / 2f)
+            drawCircle(
+                HaIvory.copy(alpha = 0.35f * a),
+                radius = s[2] * density * 0.6f,
+                center = Offset(s[0] * w + so.x, s[1] * h + so.y)
+            )
+        }
+
+        // Geometry
+        val horizonY = h * 0.84f
+        val sunR = 50f * density
+        val sunX = w * 0.80f
+        val sunO = shift(0.6f)
+        // rises from below the horizon on open, then rests 35% submerged
+        val sunY = horizonY + sunR * (0.35f + 1.1f * (1f - rise.value))
+        val sunC = Offset(sunX + sunO.x, sunY + sunO.y)
+
+        // 3. Atmospheric glow
+        drawCircle(
+            Brush.radialGradient(
+                listOf(
+                    HaGold.copy(alpha = (0.20f + 0.04f * br) * rise.value),
+                    HaGoldMid.copy(alpha = 0.06f * rise.value),
+                    Color.Transparent
+                ),
+                center = Offset(sunC.x, horizonY), radius = w * 0.85f
+            ),
+            radius = w * 0.85f, center = Offset(sunC.x, horizonY)
+        )
+
+        // 4. Everything above the horizon
+        clipRect(bottom = horizonY + sunO.y * 0.3f) {
+            // concentric hairline rings
+            val rings = floatArrayOf(1.55f, 2.2f, 2.95f, 3.8f, 4.8f)
+            rings.forEachIndexed { i, k ->
                 drawCircle(
-                    HaGoldPale.copy(alpha = 0.55f * tw),
-                    radius = s[2] * density * 0.7f,
-                    center = Offset(s[0] * w, s[1] * h)
+                    HaGoldLight.copy(alpha = (0.22f - i * 0.035f) * rise.value),
+                    radius = sunR * k, center = sunC,
+                    style = Stroke(width = 0.8f * density)
+                )
+            }
+            // slow ripple travelling outward
+            val rr = sunR * (1.1f + 4.4f * rp)
+            drawCircle(
+                HaGoldPale.copy(alpha = 0.28f * (1f - rp) * rise.value),
+                radius = rr, center = sunC, style = Stroke(width = 1.1f * density)
+            )
+            // polished sun
+            drawCircle(
+                Brush.verticalGradient(
+                    listOf(Color(0xFFFFF4D6), HaGoldLight, HaGold, Color(0xFFB57F2C)),
+                    startY = sunC.y - sunR, endY = sunC.y + sunR * 0.4f
+                ),
+                radius = sunR, center = sunC
+            )
+            drawCircle(
+                Brush.radialGradient(
+                    listOf(Color.White.copy(alpha = 0.55f), Color.Transparent),
+                    center = sunC + Offset(-sunR * 0.32f, -sunR * 0.45f), radius = sunR * 0.6f
+                ),
+                radius = sunR * 0.6f, center = sunC + Offset(-sunR * 0.32f, -sunR * 0.45f)
+            )
+        }
+
+        // 5. Reflection on the "water" below the horizon
+        clipRect(top = horizonY) {
+            for (i in 0 until 7) {
+                val y = horizonY + (i + 0.6f) * 5.5f * density
+                val half = sunR * (0.95f - i * 0.11f) * (0.85f + 0.15f * sin((tw * 3f + i * 0.37f) * 2f * PI.toFloat()))
+                drawLine(
+                    Brush.horizontalGradient(
+                        listOf(Color.Transparent, HaGoldLight.copy(alpha = (0.32f - i * 0.04f) * rise.value), Color.Transparent),
+                        startX = sunC.x - half, endX = sunC.x + half
+                    ),
+                    start = Offset(sunC.x - half, y), end = Offset(sunC.x + half, y),
+                    strokeWidth = 1.6f * density
                 )
             }
         }
 
-        // 3. Sun with corona
-        val sunC = Offset(w * 0.80f, h * 0.36f) + shift(0.45f)
-        val sunR = 36f * density
-        drawCircle(
-            Brush.radialGradient(
-                listOf(HaGold.copy(alpha = 0.30f + 0.08f * b), HaGoldMid.copy(alpha = 0.10f), Color.Transparent),
-                center = sunC, radius = sunR * 6.5f
+        // 6. Hairline horizon, brightest under the sun, fading to the left
+        drawLine(
+            Brush.horizontalGradient(
+                0f to Color.Transparent,
+                0.45f to HaGold.copy(alpha = 0.10f),
+                (sunC.x / w).coerceIn(0.5f, 0.95f) to HaGoldPale.copy(alpha = 0.65f),
+                1f to HaGold.copy(alpha = 0.15f)
             ),
-            radius = sunR * 6.5f, center = sunC
+            start = Offset(0f, horizonY), end = Offset(w, horizonY),
+            strokeWidth = 1.0f * density
         )
-        rotate(c, pivot = sunC) {
-            for (i in 0 until 14) {
-                rotate(i * (360f / 14f), pivot = sunC) {
-                    val ray = Path().apply {
-                        moveTo(sunC.x - sunR * 0.10f, sunC.y)
-                        lineTo(sunC.x, sunC.y - sunR * (3.4f + if (i % 2 == 0) 0.9f else 0f))
-                        lineTo(sunC.x + sunR * 0.10f, sunC.y)
-                        close()
-                    }
-                    drawPath(
-                        ray,
-                        Brush.verticalGradient(
-                            listOf(Color.Transparent, HaGoldLight.copy(alpha = 0.10f + 0.04f * b)),
-                            startY = sunC.y - sunR * 4.3f, endY = sunC.y
-                        )
-                    )
-                }
-            }
-        }
-        // the sphere itself: lit from the upper left
-        drawCircle(Color.Black.copy(alpha = 0.35f), radius = sunR * 1.02f, center = sunC + Offset(0f, sunR * 0.10f))
-        drawCircle(
-            Brush.radialGradient(
-                listOf(Color(0xFFFFF8E2), HaGoldLight, HaGold, Color(0xFFB3802F)),
-                center = sunC + Offset(-sunR * 0.35f, -sunR * 0.4f),
-                radius = sunR * 1.7f
-            ),
-            radius = sunR, center = sunC
-        )
-        drawCircle(
-            Brush.radialGradient(listOf(Color.White.copy(alpha = 0.75f), Color.Transparent),
-                center = sunC + Offset(-sunR * 0.38f, -sunR * 0.42f), radius = sunR * 0.45f),
-            radius = sunR * 0.45f, center = sunC + Offset(-sunR * 0.38f, -sunR * 0.42f)
-        )
-        drawCircle(
-            HaGoldPale.copy(alpha = 0.35f), radius = sunR * 1.0f, center = sunC,
-            style = Stroke(width = 1.2f * density)
-        )
-
-        // 4. Horizon glow
-        drawOval(
-            Brush.radialGradient(
-                listOf(HaGold.copy(alpha = 0.22f + 0.05f * b), Color.Transparent),
-                center = Offset(w * 0.72f, h * 0.86f), radius = w * 0.7f
-            ),
-            topLeft = Offset(w * 0.02f, h * 0.62f), size = Size(w * 1.4f, h * 0.5f)
-        )
-
-        // 5. Mountain ridges, far -> near (each with its own parallax depth)
-        ridge(w, h, base = 0.70f, amp = 0.07f, seed = 1.3f, offset = shift(0.6f),
-            top = Color(0xFF3A2C18), bottom = Color(0xFF1A140D), rim = HaGoldLight.copy(alpha = 0.40f))
-        ridge(w, h, base = 0.80f, amp = 0.06f, seed = 2.7f, offset = shift(1.0f),
-            top = Color(0xFF1F1911), bottom = Color(0xFF0E0C0A), rim = HaGold.copy(alpha = 0.22f))
-        ridge(w, h, base = 0.90f, amp = 0.045f, seed = 4.1f, offset = shift(1.5f),
-            top = Color(0xFF0E0D0E), bottom = fadeTo, rim = HaGoldDeep.copy(alpha = 0.18f))
-
-        // 6. Golden dust drifting upward (nearest layer)
-        translate(shift(2.0f).x, shift(2.0f).y) {
-            dust.forEach { p ->
-                val y = ((p[1] - d * p[2] * 1.4f) % 1f + 1f) % 1f
-                val x = p[0] + 0.02f * sin((d * 8f + p[4]) * 2f * PI.toFloat())
-                val fade = (sin(y * PI.toFloat())).coerceAtLeast(0f)
-                val center = Offset(x * w, y * h)
-                val r = p[3] * density
-                drawCircle(
-                    Brush.radialGradient(listOf(HaGoldPale.copy(alpha = 0.55f * fade), Color.Transparent), center = center, radius = r * 3f),
-                    radius = r * 3f, center = center, blendMode = BlendMode.Screen
-                )
-            }
-        }
 
         // 7. Seamless fade into the page
         drawRect(
-            Brush.verticalGradient(
-                0f to Color.Transparent,
-                0.82f to Color.Transparent,
-                1f to fadeTo
-            )
+            Brush.verticalGradient(0f to Color.Transparent, 0.86f to Color.Transparent, 1f to fadeTo)
         )
     }
-}
-
-/** Smooth ridge silhouette (sum of sines) with a vertical gradient and rim light. */
-private fun DrawScope.ridge(
-    w: Float, h: Float,
-    base: Float, amp: Float, seed: Float, offset: Offset,
-    top: Color, bottom: Color, rim: Color
-) {
-    val steps = 48
-    val pts = (0..steps).map { i ->
-        val fx = i / steps.toFloat()
-        val y = base +
-            amp * (0.55f * sin(fx * 6.2f + seed) + 0.30f * sin(fx * 13.1f + seed * 2.3f) + 0.15f * sin(fx * 27.7f + seed * 0.7f))
-        Offset(fx * (w + 80f) - 40f + offset.x, y * h + offset.y)
-    }
-    val fill = Path().apply {
-        moveTo(pts.first().x, h + 4f)
-        pts.forEach { lineTo(it.x, it.y) }
-        lineTo(pts.last().x, h + 4f)
-        close()
-    }
-    val minY = pts.minOf { it.y }
-    drawPath(fill, Brush.verticalGradient(listOf(top, bottom), startY = minY, endY = h))
-    val edge = Path().apply {
-        moveTo(pts.first().x, pts.first().y)
-        pts.drop(1).forEach { lineTo(it.x, it.y) }
-    }
-    drawPath(edge, rim, style = Stroke(width = 1.4f * density))
 }
