@@ -20,6 +20,14 @@
 
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
+    <!-- Lets the permission guide show the real neighbouring apps (icon + name) around High Alarm -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"

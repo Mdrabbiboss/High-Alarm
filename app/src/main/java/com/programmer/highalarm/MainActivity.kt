@@ -642,6 +642,8 @@ class MainActivity : ComponentActivity() {
         try {
             BillingManager.getInstance(this).queryPurchases()
         } catch (_: Exception) {}
+        // Back from the overlay settings without granting -> close the floating guide.
+        OverlayGuideActivity.onHostResumed()
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
