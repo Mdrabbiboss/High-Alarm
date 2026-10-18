@@ -714,10 +714,10 @@ fun EditAlarmScreen(
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 16.dp, bottom = 40.dp),
-                            color = HaIvory.copy(alpha = 0.05f),
-                            shape = RoundedCornerShape(24.dp),
-                            border = BorderStroke(1.dp, HaIvory.copy(alpha = 0.1f))
+                                .padding(top = 16.dp, bottom = 40.dp)
+                                .ha3DPanel(RoundedCornerShape(24.dp), elevation = 10.dp),
+                            color = Color.Transparent,
+                            shape = RoundedCornerShape(24.dp)
                         ) {
                             Column(modifier = Modifier.padding(20.dp)) {
                                 Row(
@@ -2536,16 +2536,15 @@ fun ChallengeSettingsDialog(
 fun EditOptionItem(title: String, value: String, icon: ImageVector, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
-        color = HaIvory.copy(alpha = 0.05f),
+        color = Color.Transparent,
         shape = RoundedCornerShape(20.dp),
-        border = BorderStroke(1.dp, HaIvory.copy(alpha = 0.1f)),
-        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)
+        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).ha3DPanel(RoundedCornerShape(20.dp), elevation = 10.dp)
     ) {
         Row(
             modifier = Modifier.padding(20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(icon, contentDescription = null, tint = HaMuted, modifier = Modifier.size(24.dp))
+            Icon(icon, contentDescription = null, tint = HaGold, modifier = Modifier.size(24.dp))
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(title, fontWeight = FontWeight.Bold, color = HaIvory, fontSize = 16.sp)
@@ -2559,16 +2558,15 @@ fun EditOptionItem(title: String, value: String, icon: ImageVector, onClick: () 
 @Composable
 fun EditToggleItem(title: String, subtitle: String, icon: ImageVector, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     Surface(
-        color = HaIvory.copy(alpha = 0.05f),
+        color = Color.Transparent,
         shape = RoundedCornerShape(20.dp),
-        border = BorderStroke(1.dp, HaIvory.copy(alpha = 0.1f)),
-        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)
+        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).ha3DPanel(RoundedCornerShape(20.dp), elevation = 10.dp)
     ) {
         Row(
             modifier = Modifier.padding(20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(icon, contentDescription = null, tint = HaMuted, modifier = Modifier.size(24.dp))
+            Icon(icon, contentDescription = null, tint = HaGold, modifier = Modifier.size(24.dp))
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(title, fontWeight = FontWeight.Bold, color = HaIvory, fontSize = 16.sp)

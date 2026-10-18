@@ -1445,40 +1445,8 @@ fun NextAlarmSummaryCard(info: NextAlarmInfo) {
             .fillMaxWidth()
             .padding(vertical = 8.dp)
             // real drop shadow under a solid (opaque) panel -> lifted, 3D feel
-            .shadow(22.dp, cardShape, ambientColor = Color.Black, spotColor = Color.Black)
-            .clip(cardShape)
-            // light comes from straight above: lighter top, darker bottom (symmetric)
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFF26252D), Color(0xFF1A1A20), Color(0xFF111115))
-                )
-            )
-            // bevelled edge: bright top rim, gold mid, dark bottom rim
-            .border(
-                1.2.dp,
-                Brush.verticalGradient(
-                    listOf(
-                        HaGoldPale.copy(alpha = 0.55f),
-                        HaGold.copy(alpha = 0.18f),
-                        Color.Black.copy(alpha = 0.7f)
-                    )
-                ),
-                cardShape
-            )
+            .ha3DPanel(cardShape, gold = true, elevation = 22.dp)
     ) {
-        // glass gloss across the top half (even from left to right)
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .background(
-                    Brush.verticalGradient(
-                        0f to Color.White.copy(alpha = 0.07f),
-                        0.45f to Color.White.copy(alpha = 0.015f),
-                        0.46f to Color.Transparent,
-                        1f to Color.Transparent
-                    )
-                )
-        )
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1489,18 +1457,7 @@ fun NextAlarmSummaryCard(info: NextAlarmInfo) {
             Box(
                 modifier = Modifier
                     .size(54.dp)
-                    .shadow(10.dp, CircleShape, ambientColor = Color.Black, spotColor = Color.Black)
-                    .clip(CircleShape)
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(HaGoldPale, HaGoldLight, HaGold, HaGoldMid, HaGoldDeep)
-                        )
-                    )
-                    .border(
-                        1.5.dp,
-                        Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.7f), HaBronze)),
-                        CircleShape
-                    ),
+                    .ha3DGoldCoin(),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -1527,14 +1484,7 @@ fun NextAlarmSummaryCard(info: NextAlarmInfo) {
             ) {
                 Text(
                     text = info.time.substringBefore(" "),
-                    style = androidx.compose.ui.text.TextStyle(
-                        brush = Brush.verticalGradient(listOf(Color.White, HaIvory, Color(0xFFCFCBC4))),
-                        shadow = androidx.compose.ui.graphics.Shadow(
-                            color = Color.Black.copy(alpha = 0.75f),
-                            offset = Offset(0f, 6f),
-                            blurRadius = 14f
-                        )
-                    ),
+                    color = HaIvory,
                     fontSize = 54.sp,
                     fontWeight = FontWeight.Black,
                     lineHeight = 54.sp
@@ -1543,14 +1493,7 @@ fun NextAlarmSummaryCard(info: NextAlarmInfo) {
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = info.time.substringAfter(" "),
-                        style = androidx.compose.ui.text.TextStyle(
-                            brush = Brush.verticalGradient(listOf(HaGoldPale, HaGold, HaGoldDeep)),
-                            shadow = androidx.compose.ui.graphics.Shadow(
-                                color = Color.Black.copy(alpha = 0.6f),
-                                offset = Offset(0f, 3f),
-                                blurRadius = 8f
-                            )
-                        ),
+                        color = HaGold,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 1.sp,

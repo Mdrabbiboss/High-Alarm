@@ -714,30 +714,16 @@ fun AlarmReliabilityCard(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            ,
+            .ha3DPanel(RoundedCornerShape(20.dp), gold = true),
         shape = RoundedCornerShape(20.dp),
-        color = Color.Transparent,
-        border = BorderStroke(
-            1.2.dp,
-            Brush.horizontalGradient(
-                colors = listOf(
-                    SoftAmber.copy(alpha = 0.8f),
-                    HaGoldMid.copy(alpha = 0.4f),
-                    SoftAmber.copy(alpha = 0.8f)
-                )
-            )
-        )
+        color = Color.Transparent
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            HaUmber,
-                            HaSurface,
-                            HaUmber.copy(alpha = 0.8f)
-                        )
+                    brush = Brush.verticalGradient(
+                        colors = listOf(Color.Transparent, Color.Transparent)
                     )
                 )
                 .padding(horizontal = 18.dp, vertical = 16.dp)
@@ -1052,10 +1038,11 @@ fun SettingsCategory(title: String) {
 @Composable
 fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
     Surface(
-        color = HaIvory.copy(alpha = 0.05f),
+        color = Color.Transparent,
         shape = RoundedCornerShape(28.dp),
-        border = BorderStroke(1.dp, HaIvory.copy(alpha = 0.1f)),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .ha3DPanel(RoundedCornerShape(28.dp))
     ) {
         Column(modifier = Modifier.padding(vertical = 12.dp)) {
             content()
@@ -1075,11 +1062,10 @@ fun SettingsItem(title: String, description: String, icon: ImageVector, showChev
         Box(
             modifier = Modifier
                 .size(42.dp)
-                .clip(CircleShape)
-                .background(HaIvory.copy(alpha = 0.08f)),
+                .ha3DOrb(),
             contentAlignment = Alignment.Center
         ) {
-            Icon(icon, contentDescription = null, tint = HaIvory, modifier = Modifier.size(20.dp))
+            Icon(icon, contentDescription = null, tint = HaGoldLight, modifier = Modifier.size(20.dp))
         }
         Spacer(modifier = Modifier.width(18.dp))
         BoxWithConstraints(
@@ -1133,11 +1119,10 @@ fun SettingsToggleItem(
         Box(
             modifier = Modifier
                 .size(42.dp)
-                .clip(CircleShape)
-                .background(if (checked) SoftAmber.copy(alpha = 0.15f) else HaIvory.copy(alpha = 0.08f)),
+                .then(if (checked) Modifier.ha3DGoldCoin() else Modifier.ha3DOrb()),
             contentAlignment = Alignment.Center
         ) {
-            Icon(icon, contentDescription = null, tint = if (checked) SoftAmber else HaIvory, modifier = Modifier.size(20.dp))
+            Icon(icon, contentDescription = null, tint = if (checked) Color(0xFF2A1F0E) else HaGoldLight, modifier = Modifier.size(20.dp))
         }
         Spacer(modifier = Modifier.width(18.dp))
         BoxWithConstraints(
@@ -1212,20 +1197,9 @@ fun PremiumUpgradeCard(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            ,
+            .ha3DPanel(RoundedCornerShape(28.dp), gold = true, elevation = 18.dp),
         shape = RoundedCornerShape(28.dp),
-        color = if (isPremium) SoftAmber.copy(alpha = 0.12f) else HaSurfaceLow,
-        border = BorderStroke(
-            1.5.dp,
-            Brush.linearGradient(
-                colors = listOf(
-                    SoftAmber.copy(alpha = if (isPremium) 0.8f else 0.6f),
-                    HaGoldLight,
-                    HaGoldLight.copy(alpha = 0.35f),
-                    SoftAmber.copy(alpha = if (isPremium) 0.8f else 0.6f)
-                )
-            )
-        )
+        color = Color.Transparent
     ) {
         Column(
             modifier = Modifier.padding(24.dp),

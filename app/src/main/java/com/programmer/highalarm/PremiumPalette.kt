@@ -1,7 +1,16 @@
 package com.programmer.highalarm
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 
 /*
  * HighAlarm — "Obsidian & Champagne Gold" design system.
@@ -48,3 +57,60 @@ val HaGoldGradient: Brush
 
 val HaGoldHorizontal: Brush
     get() = Brush.horizontalGradient(listOf(HaGoldLight, HaGold, HaGoldMid))
+
+// ── 3D surface system (light falls from straight above) ────────────────
+val HaPanel = Color(0xFF1C1C22)
+val HaPanelTop = Color(0xFF25242C)
+val HaPanelBottom = Color(0xFF141418)
+
+val HaPanelBrush: Brush
+    get() = Brush.verticalGradient(listOf(HaPanelTop, HaPanel, HaPanelBottom))
+
+/** Bevelled edge: lit top rim, dark bottom rim. */
+val Ha3DBorder: androidx.compose.foundation.BorderStroke
+    get() = androidx.compose.foundation.BorderStroke(
+        1.dp,
+        Brush.verticalGradient(
+            listOf(Color.White.copy(alpha = 0.16f), Color.White.copy(alpha = 0.04f), Color.Black.copy(alpha = 0.6f))
+        )
+    )
+
+/** Same bevel with a champagne-gold top rim. */
+val Ha3DGoldBorder: androidx.compose.foundation.BorderStroke
+    get() = androidx.compose.foundation.BorderStroke(
+        1.2.dp,
+        Brush.verticalGradient(
+            listOf(HaGoldPale.copy(alpha = 0.6f), HaGold.copy(alpha = 0.18f), Color.Black.copy(alpha = 0.65f))
+        )
+    )
+
+/** Raised, top-lit panel with a real drop shadow. Background is opaque so no shadow bleeds through. */
+fun Modifier.ha3DPanel(
+    shape: Shape,
+    gold: Boolean = false,
+    elevation: Dp = 14.dp
+): Modifier = this
+    .shadow(elevation, shape, ambientColor = Color.Black, spotColor = Color.Black)
+    .clip(shape)
+    .background(HaPanelBrush)
+    .border(if (gold) Ha3DGoldBorder else Ha3DBorder, shape)
+
+/** Small raised dark orb for icons. */
+fun Modifier.ha3DOrb(): Modifier = this
+    .shadow(6.dp, CircleShape, ambientColor = Color.Black, spotColor = Color.Black)
+    .clip(CircleShape)
+    .background(Brush.verticalGradient(listOf(Color(0xFF302F38), Color(0xFF1B1B21), Color(0xFF121216))))
+    .border(Ha3DBorder, CircleShape)
+
+/** Small raised gold coin for active icons. */
+fun Modifier.ha3DGoldCoin(): Modifier = this
+    .shadow(6.dp, CircleShape, ambientColor = Color.Black, spotColor = Color.Black)
+    .clip(CircleShape)
+    .background(Brush.verticalGradient(listOf(HaGoldPale, HaGoldLight, HaGold, HaGoldMid, HaGoldDeep)))
+    .border(
+        androidx.compose.foundation.BorderStroke(
+            1.dp,
+            Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.7f), HaBronze))
+        ),
+        CircleShape
+    )

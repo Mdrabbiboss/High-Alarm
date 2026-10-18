@@ -340,10 +340,9 @@ fun ReliabilityCheckCard(
     onButtonClick: () -> Unit
 ) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().ha3DPanel(RoundedCornerShape(20.dp), elevation = 10.dp),
         shape = RoundedCornerShape(20.dp),
-        color = HaSurface,
-        border = BorderStroke(1.dp, HaIvory.copy(alpha = 0.08f))
+        color = Color.Transparent
     ) {
         Column(
             modifier = Modifier.padding(18.dp)
@@ -493,10 +492,9 @@ fun ManufacturerGuidanceCard(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier,
+        modifier = modifier.ha3DPanel(RoundedCornerShape(18.dp), elevation = 8.dp),
         shape = RoundedCornerShape(18.dp),
-        color = HaSurface,
-        border = BorderStroke(1.dp, HaIvory.copy(alpha = 0.08f))
+        color = Color.Transparent
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
