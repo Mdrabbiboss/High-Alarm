@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:background="@android:color/transparent">
+
+    <TextView
+        android:id="@+id/notification_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Are You Awake? ☀️"
+        android:textColor="#F2EEE6"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/notification_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Tap below to confirm you're officially awake."
+        android:textColor="#8E8B95"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/btn_confirm_awake_big"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/notification_button_bg"
+        android:gravity="center"
+        android:text="CONFIRM I'M AWAKE"
+        android:textColor="#07070A"
+        android:textStyle="bold"
+        android:textSize="15sp" />
+</LinearLayout>

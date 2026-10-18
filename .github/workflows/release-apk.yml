@@ -1,0 +1,52 @@
+name: Build Release APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: |
+            17
+            21
+            25
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build signed release APK
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease \
+            -PMYAPP_RELEASE_STORE_FILE=${{ github.workspace }}/ci/highalarm-release.jks \
+            -PMYAPP_RELEASE_STORE_PASSWORD=HighAlarm2026 \
+            -PMYAPP_RELEASE_KEY_ALIAS=highalarm \
+            -PMYAPP_RELEASE_KEY_PASSWORD=HighAlarm2026
+
+      - name: Rename APK
+        run: |
+          mkdir -p out
+          cp app/build/outputs/apk/release/*.apk out/HighAlarm-premium-release.apk
+          ls -la out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HighAlarm-release-apk
+          path: out/HighAlarm-premium-release.apk
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: HighAlarm Premium build ${{ github.run_number }}
+          files: out/HighAlarm-premium-release.apk
