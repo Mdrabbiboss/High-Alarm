@@ -1,6 +1,6 @@
 package com.programmer.highalarm
 
-import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -12,14 +12,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.lerp
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.hypot
@@ -28,34 +27,46 @@ import kotlin.math.sqrt
 
 enum class ExerciseKind { PushUp, Squat }
 
+/** Polished metal mannequin colours: light, base, deep. */
+val AthleteGold = listOf(Color(0xFFFFF1C9), Color(0xFFE2B865), Color(0xFF6E4D1C))
+val AthleteInk = listOf(Color(0xFF6B4E1E), Color(0xFF3A2A10), Color(0xFF140E05))
+
+/** World units used by each pose (the canvas scales to fit). */
+private const val PUSHUP_W = 34f
+private const val SQUAT_W = 24f
+private const val WORLD_H = 24f
+
+private val RepEase = CubicBezierEasing(0.45f, 0f, 0.25f, 1f)
+
 /**
- * A little athlete that does one smooth rep, rests, and repeats.
- * Drawn on a 24x24 grid with real joint kinematics (the elbow / knee is
- * solved from fixed limb lengths), so the motion looks natural.
+ * A little 3D mannequin that does one smooth rep, rests, and repeats.
+ * Limbs are tapered, shaded volumes (lit from above), joints are solved with
+ * real limb lengths, and the far-side arm/leg sits behind in shadow — so it
+ * reads as a body, not a stick figure.
  *
- * @param colors light → mid → deep tone used for the body (vertical gradient)
+ * @param colors light → base → deep metal tones for the body
  */
 @Composable
 fun AnimatedExerciseIcon(
     kind: ExerciseKind,
-    colors: List<Color>,
+    colors: List<Color> = AthleteGold,
     modifier: Modifier = Modifier,
     showFloor: Boolean = true
 ) {
     val transition = rememberInfiniteTransition(label = "exercise_icon")
-    // 0 = top (arms / legs straight), 1 = bottom of the rep
+    // 0 = top of the rep, 1 = bottom
     val t by transition.animateFloat(
         initialValue = 0f,
         targetValue = 0f,
         animationSpec = infiniteRepeatable(
             animation = keyframes {
-                durationMillis = 2800
+                durationMillis = 3000
                 0f at 0 using LinearEasing
-                0f at 1000 using FastOutSlowInEasing   // rest at the top
-                1f at 1650 using LinearEasing           // smooth descent
-                1f at 1850 using FastOutSlowInEasing    // brief pause at the bottom
-                0f at 2500 using LinearEasing           // drive back up
-                0f at 2800
+                0f at 950 using RepEase       // rest at the top
+                1f at 1700 using LinearEasing  // controlled descent
+                1f at 1950 using RepEase       // short pause at the bottom
+                0f at 2650 using LinearEasing  // drive back up
+                0f at 3000
             },
             repeatMode = RepeatMode.Restart
         ),
@@ -63,133 +74,215 @@ fun AnimatedExerciseIcon(
     )
 
     Canvas(modifier = modifier) {
-        val u = size.minDimension / 24f
-        val ox = (size.width - 24f * u) / 2f
-        val oy = (size.height - 24f * u) / 2f
-        fun p(x: Float, y: Float) = Offset(ox + x * u, oy + y * u)
-        val body = Brush.verticalGradient(colors, startY = oy + 2f * u, endY = oy + 21f * u)
-
+        val worldW = if (kind == ExerciseKind.PushUp) PUSHUP_W else SQUAT_W
+        val u = minOf(size.width / worldW, size.height / WORLD_H)
+        val ox = (size.width - worldW * u) / 2f
+        val oy = (size.height - WORLD_H * u) / 2f
+        val painter = AthletePainter(this, u, ox, oy, colors)
         when (kind) {
-            ExerciseKind.PushUp -> drawPushUp(t, u, ::p, body, colors, showFloor)
-            ExerciseKind.Squat -> drawSquat(t, u, ::p, body, colors, showFloor)
+            ExerciseKind.PushUp -> painter.pushUp(t, showFloor)
+            ExerciseKind.Squat -> painter.squat(t, showFloor)
         }
     }
 }
 
-private fun lerp(a: Float, b: Float, t: Float) = a + (b - a) * t
+private fun lerpF(a: Float, b: Float, t: Float) = a + (b - a) * t
 
 /** Elbow / knee position from two fixed limb lengths (2-bone IK). */
-private fun solveJoint(
-    ax: Float, ay: Float, bx: Float, by: Float,
-    l1: Float, l2: Float, bendSign: Float
-): Pair<Float, Float> {
-    val dx = bx - ax; val dy = by - ay
-    var d = hypot(dx, dy)
-    d = d.coerceIn(0.01f, l1 + l2 - 0.001f)
-    val a = (l1 * l1 - l2 * l2 + d * d) / (2 * d)
-    val h = sqrt((l1 * l1 - a * a).coerceAtLeast(0f))
-    val mx = ax + a * dx / d; val my = ay + a * dy / d
-    return Pair(mx + bendSign * h * (-dy / d), my + bendSign * h * (dx / d))
+private fun solveJoint(a: Offset, b: Offset, l1: Float, l2: Float, bendSign: Float): Offset {
+    val dx = b.x - a.x; val dy = b.y - a.y
+    val d = hypot(dx, dy).coerceIn(0.01f, l1 + l2 - 0.001f)
+    val along = (l1 * l1 - l2 * l2 + d * d) / (2 * d)
+    val h = sqrt((l1 * l1 - along * along).coerceAtLeast(0f))
+    val mx = a.x + along * dx / d; val my = a.y + along * dy / d
+    return Offset(mx + bendSign * h * (-dy / d), my + bendSign * h * (dx / d))
 }
 
-private fun DrawScope.limb(points: List<Offset>, brush: Brush, width: Float) {
-    val path = Path().apply {
-        moveTo(points[0].x, points[0].y)
-        for (i in 1 until points.size) lineTo(points[i].x, points[i].y)
+private class AthletePainter(
+    val scope: DrawScope,
+    val u: Float,
+    val ox: Float,
+    val oy: Float,
+    colors: List<Color>
+) {
+    private val light = colors[0]
+    private val base = colors.getOrElse(1) { colors[0] }
+    private val deep = colors.last()
+    // far-side limbs sit in shadow
+    private val farLight = lerp(light, Color.Black, 0.30f)
+    private val farBase = lerp(base, Color.Black, 0.38f)
+    private val farDeep = lerp(deep, Color.Black, 0.40f)
+
+    private fun p(o: Offset) = Offset(ox + o.x * u, oy + o.y * u)
+
+    /** Tapered capsule from a (radius ra) to b (radius rb), in world units. */
+    private fun capsulePath(a: Offset, b: Offset, ra: Float, rb: Float): Path {
+        val pa = p(a); val pb = p(b)
+        val rA = ra * u; val rB = rb * u
+        val dx = pb.x - pa.x; val dy = pb.y - pa.y
+        val len = hypot(dx, dy).coerceAtLeast(0.001f)
+        val nx = -dy / len; val ny = dx / len
+        val angN = Math.toDegrees(atan2(ny, nx).toDouble()).toFloat()
+        return Path().apply {
+            moveTo(pa.x + nx * rA, pa.y + ny * rA)
+            lineTo(pb.x + nx * rB, pb.y + ny * rB)
+            arcTo(Rect(pb.x - rB, pb.y - rB, pb.x + rB, pb.y + rB), angN, -180f, false)
+            lineTo(pa.x - nx * rA, pa.y - ny * rA)
+            arcTo(Rect(pa.x - rA, pa.y - rA, pa.x + rA, pa.y + rA), angN + 180f, -180f, false)
+            close()
+        }
     }
-    drawPath(path, brush, style = Stroke(width = width, cap = StrokeCap.Round, join = StrokeJoin.Round))
+
+    /** A shaded limb: deep rim, base body, and a soft highlight on the lit (upper) side. */
+    fun limb(a: Offset, b: Offset, ra: Float, rb: Float, far: Boolean = false) {
+        val c0 = if (far) farDeep else deep
+        val c1 = if (far) farBase else base
+        val c2 = if (far) farLight else light
+        scope.drawPath(capsulePath(a, b, ra, rb), c0)
+        val o1 = 0.10f
+        scope.drawPath(
+            capsulePath(
+                Offset(a.x, a.y - o1 * ra), Offset(b.x, b.y - o1 * rb),
+                ra * 0.80f, rb * 0.80f
+            ),
+            c1
+        )
+        val o2 = 0.36f
+        scope.drawPath(
+            capsulePath(
+                Offset(a.x, a.y - o2 * ra), Offset(b.x, b.y - o2 * rb),
+                ra * 0.34f, rb * 0.34f
+            ),
+            Brush.linearGradient(
+                listOf(c2, c2.copy(alpha = 0.55f)),
+                start = p(a), end = p(b)
+            )
+        )
+    }
+
+    fun head(c: Offset, r: Float) {
+        val pc = p(c); val rr = r * u
+        scope.drawOval(deep, topLeft = Offset(pc.x - rr, pc.y - rr * 1.08f), size = Size(rr * 2, rr * 2.16f))
+        val c1 = Offset(pc.x - 0.07f * rr, pc.y - 0.12f * rr); val r1 = rr * 0.82f
+        scope.drawOval(base, topLeft = Offset(c1.x - r1, c1.y - r1 * 1.08f), size = Size(r1 * 2, r1 * 2.16f))
+        val c2 = Offset(pc.x - 0.25f * rr, pc.y - 0.38f * rr); val r2 = rr * 0.36f
+        scope.drawOval(
+            Brush.radialGradient(listOf(light, light.copy(alpha = 0f)), center = c2, radius = r2 * 1.6f),
+            topLeft = Offset(c2.x - r2 * 1.6f, c2.y - r2 * 1.6f), size = Size(r2 * 3.2f, r2 * 3.2f)
+        )
+    }
+
+    fun ground(floorY: Float, shadowFrom: Float, shadowTo: Float, worldW: Float, show: Boolean) {
+        if (show) {
+            val top = p(Offset(0f, floorY))
+            val bottom = p(Offset(worldW, WORLD_H))
+            scope.drawRect(
+                Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.05f), Color.Transparent), startY = top.y, endY = bottom.y),
+                topLeft = top, size = Size(bottom.x - top.x, bottom.y - top.y)
+            )
+            scope.drawLine(
+                Brush.horizontalGradient(
+                    listOf(Color.Transparent, base.copy(alpha = 0.45f), Color.Transparent),
+                    startX = top.x, endX = bottom.x
+                ),
+                start = top, end = Offset(bottom.x, top.y), strokeWidth = 0.18f * u
+            )
+        }
+        // soft contact shadow
+        val a = p(Offset(shadowFrom, floorY - 0.55f)); val b = p(Offset(shadowTo, floorY + 0.55f))
+        scope.drawOval(
+            Brush.radialGradient(
+                listOf(Color.Black.copy(alpha = 0.75f), Color.Transparent),
+                center = Offset((a.x + b.x) / 2, (a.y + b.y) / 2),
+                radius = (b.x - a.x) / 2
+            ),
+            topLeft = a, size = Size(b.x - a.x, b.y - a.y)
+        )
+    }
+
+    fun pushUp(t: Float, showFloor: Boolean) {
+        val floor = 20.2f
+        val toe = Offset(3.2f, 19.7f)
+        val bodyLen = 15.2f
+        val th = Math.toRadians(lerpF(21f, 6f, t).toDouble())
+        val sh = Offset(toe.x + bodyLen * cos(th).toFloat(), toe.y - bodyLen * sin(th).toFloat())
+        fun along(f: Float, lift: Float = 0f) = Offset(lerpF(toe.x, sh.x, f), lerpF(toe.y, sh.y, f) - lift)
+        val ankle = along(0.08f, 0.35f)
+        val knee = along(0.36f, 0.15f)
+        val hip = along(0.60f, 0.25f)
+        val chest = along(0.90f, 0.20f)
+        val hand = Offset(sh.x + 0.4f, floor - 0.45f)
+        val elbow = solveJoint(sh, hand, 3.6f, 3.4f, 1f)
+
+        ground(floor, 2.6f, sh.x + 2.4f, PUSHUP_W, showFloor)
+
+        // far side (behind, in shadow)
+        val fsh = Offset(sh.x - 0.5f, sh.y - 0.3f)
+        val fhand = Offset(hand.x - 0.7f, hand.y - 0.1f)
+        val felbow = solveJoint(fsh, fhand, 3.6f, 3.4f, 1f)
+        limb(fsh, felbow, 0.62f, 0.50f, far = true)
+        limb(felbow, fhand, 0.50f, 0.38f, far = true)
+        val fo = Offset(-0.3f, -0.2f)
+        limb(hip + fo, knee + fo, 0.85f, 0.60f, far = true)
+        limb(knee + fo, ankle + fo, 0.60f, 0.42f, far = true)
+
+        // near leg + torso
+        limb(knee, ankle, 0.62f, 0.42f)
+        limb(ankle, toe, 0.42f, 0.32f)
+        limb(hip, knee, 0.95f, 0.66f)
+        limb(hip, chest, 1.15f, 1.45f)
+        limb(chest, sh, 1.45f, 1.20f)
+
+        // neck + head follow the body line
+        val dx = sh.x - toe.x; val dy = sh.y - toe.y
+        val l = hypot(dx, dy); val ux = dx / l; val uy = dy / l
+        val neck = Offset(sh.x + ux * 1.3f + uy * 0.5f, sh.y + uy * 1.3f - ux * 0.5f)
+        limb(sh, neck, 0.55f, 0.50f)
+        head(Offset(sh.x + ux * 2.6f + uy * 0.9f, sh.y + uy * 2.6f - ux * 0.9f), 1.45f)
+
+        // near arm + hand
+        limb(sh, elbow, 0.70f, 0.55f)
+        limb(elbow, hand, 0.55f, 0.40f)
+        limb(hand, Offset(hand.x + 0.9f, hand.y + 0.05f), 0.38f, 0.30f)
+    }
+
+    fun squat(t: Float, showFloor: Boolean) {
+        val floor = 22.0f
+        val ankle = Offset(12.6f, 21.0f)
+        val shin = 4.7f; val thigh = 4.9f; val torso = 5.2f
+        val sl = Math.toRadians(lerpF(4f, 30f, t).toDouble())
+        val tha = Math.toRadians(lerpF(-6f, -100f, t).toDouble())
+        val tl = Math.toRadians(lerpF(3f, 38f, t).toDouble())
+        val aa = Math.toRadians(lerpF(84f, 4f, t).toDouble())
+
+        val knee = Offset(ankle.x + shin * sin(sl).toFloat(), ankle.y - shin * cos(sl).toFloat())
+        val hip = Offset(knee.x + thigh * sin(tha).toFloat(), knee.y - thigh * cos(tha).toFloat())
+        val sh = Offset(hip.x + torso * sin(tl).toFloat(), hip.y - torso * cos(tl).toFloat())
+        val chest = Offset(lerpF(hip.x, sh.x, 0.62f), lerpF(hip.y, sh.y, 0.62f))
+        val headC = Offset(sh.x + 2.3f * sin(tl).toFloat(), sh.y - 2.3f * cos(tl).toFloat())
+        val elbow = Offset(sh.x + 2.9f * cos(aa).toFloat(), sh.y + 0.3f + 2.9f * sin(aa).toFloat())
+        val wrist = Offset(elbow.x + 2.8f * cos(aa - 0.05).toFloat(), elbow.y + 2.8f * sin(aa - 0.05).toFloat())
+
+        ground(floor, ankle.x - lerpF(3f, 4.2f, t), ankle.x + 3.6f, SQUAT_W, showFloor)
+
+        // far side
+        val o = Offset(-0.4f, -0.25f)
+        limb(hip + o, knee + o, 0.95f, 0.62f, far = true)
+        limb(knee + o, ankle + o, 0.60f, 0.42f, far = true)
+        val ao = Offset(-0.3f, -0.2f)
+        limb(sh + ao, elbow + ao, 0.60f, 0.50f, far = true)
+        limb(elbow + ao, wrist + ao, 0.50f, 0.40f, far = true)
+
+        // near leg, torso, head, arm
+        limb(ankle, Offset(ankle.x + 2.0f, ankle.y + 0.55f), 0.45f, 0.32f)
+        limb(knee, ankle, 0.65f, 0.45f)
+        limb(hip, knee, 1.00f, 0.68f)
+        limb(hip, chest, 1.15f, 1.40f)
+        limb(chest, sh, 1.40f, 1.15f)
+        val neck = Offset(lerpF(sh.x, headC.x, 0.5f), lerpF(sh.y, headC.y, 0.5f))
+        limb(sh, neck, 0.55f, 0.50f)
+        head(headC, 1.4f)
+        limb(sh, elbow, 0.68f, 0.55f)
+        limb(elbow, wrist, 0.55f, 0.42f)
+    }
 }
-
-private fun DrawScope.floorAndShadow(
-    u: Float, p: (Float, Float) -> Offset, colors: List<Color>,
-    x0: Float, x1: Float, y: Float, shadowCx: Float, shadowW: Float, show: Boolean
-) {
-    if (!show) return
-    // soft contact shadow that breathes with the movement
-    val c = p(shadowCx, y)
-    drawOval(
-        brush = Brush.radialGradient(
-            listOf(Color.Black.copy(alpha = 0.55f), Color.Transparent),
-            center = c, radius = shadowW * u
-        ),
-        topLeft = Offset(c.x - shadowW * u, c.y - 1.1f * u),
-        size = Size(shadowW * 2 * u, 2.2f * u)
-    )
-    drawLine(
-        brush = Brush.horizontalGradient(
-            listOf(Color.Transparent, colors.last().copy(alpha = 0.9f), Color.Transparent),
-            startX = p(x0, y).x, endX = p(x1, y).x
-        ),
-        start = p(x0, y), end = p(x1, y),
-        strokeWidth = 1.1f * u, cap = StrokeCap.Round
-    )
-}
-
-private fun DrawScope.drawPushUp(
-    t: Float, u: Float, p: (Float, Float) -> Offset,
-    body: Brush, colors: List<Color>, showFloor: Boolean
-) {
-    val floorY = 19.6f
-    val feetX = 3.4f; val feetY = 17.6f
-    val handX = 16.0f; val handY = 18.5f
-    // shoulder travels down toward the hand while the body stays a straight plank
-    val sx = lerp(16.2f, 16.9f, t)
-    val sy = lerp(11.0f, 15.3f, t)
-    // elbow folds back toward the feet, like a real push-up
-    val (ex, ey) = solveJoint(sx, sy, handX, handY, 3.9f, 3.7f, bendSign = 1f)
-
-    floorAndShadow(u, p, colors, 1.6f, 22.4f, floorY, 10.5f, lerp(8.5f, 9.3f, t), showFloor)
-
-    // body: feet -> hips -> shoulders (straight plank)
-    val hipX = lerp(feetX, sx, 0.52f); val hipY = lerp(feetY, sy, 0.52f)
-    limb(listOf(p(feetX, feetY), p(hipX, hipY), p(sx, sy)), body, 2.7f * u)
-    // supporting arm with a real elbow bend
-    limb(listOf(p(sx, sy), p(ex, ey), p(handX, handY)), body, 2.0f * u)
-    // head, following the body line
-    val dx = sx - feetX; val dy = sy - feetY
-    val len = hypot(dx, dy)
-    val nx = dx / len; val ny = dy / len
-    val hx = sx + nx * 2.5f + ny * 0.9f
-    val hy = sy + ny * 2.5f - nx * 0.9f
-    drawCircle(body, radius = 2.15f * u, center = p(hx, hy))
-    // tiny specular highlight for a 3D feel
-    drawCircle(Color.White.copy(alpha = 0.35f), radius = 0.7f * u, center = p(hx - 0.6f, hy - 0.7f))
-}
-
-private fun DrawScope.drawSquat(
-    t: Float, u: Float, p: (Float, Float) -> Offset,
-    body: Brush, colors: List<Color>, showFloor: Boolean
-) {
-    val floorY = 21.5f
-    val ax = 13.4f; val ay = 20.2f              // ankle (fixed)
-    val shin = 4.9f; val thigh = 5.1f; val torso = 5.3f
-
-    // joint angles (degrees from vertical, + = forward / toward +x)
-    val shinLean = Math.toRadians(lerp(3f, 28f, t).toDouble())
-    val thighAng = Math.toRadians(lerp(-4f, -98f, t).toDouble())
-    val torsoLean = Math.toRadians(lerp(2f, 36f, t).toDouble())
-    val armAng = Math.toRadians(lerp(80f, 6f, t).toDouble())   // from +x, y down: arms rise forward
-
-    val kx = ax + shin * sin(shinLean).toFloat(); val ky = ay - shin * cos(shinLean).toFloat()
-    val hx = kx + thigh * sin(thighAng).toFloat(); val hy = ky - thigh * cos(thighAng).toFloat()
-    val sx = hx + torso * sin(torsoLean).toFloat(); val sy = hy - torso * cos(torsoLean).toFloat()
-    val headX = sx + 2.4f * sin(torsoLean).toFloat(); val headY = sy - 2.4f * cos(torsoLean).toFloat()
-    val wx = sx + 5.4f * cos(armAng).toFloat(); val wy = sy + 0.4f + 5.4f * sin(armAng).toFloat()
-
-    floorAndShadow(u, p, colors, 4f, 22f, floorY, lerp(13.6f, 12.4f, t), lerp(4.6f, 6.4f, t), showFloor)
-
-    // foot
-    limb(listOf(p(ax, ay), p(ax + 2.3f, ay + 0.3f)), body, 2.0f * u)
-    // leg: ankle -> knee -> hip
-    limb(listOf(p(ax, ay), p(kx, ky), p(hx, hy)), body, 2.5f * u)
-    // torso
-    limb(listOf(p(hx, hy), p(sx, sy)), body, 2.7f * u)
-    // arms
-    limb(listOf(p(sx, sy + 0.4f), p(wx, wy)), body, 1.9f * u)
-    // head
-    drawCircle(body, radius = 2.05f * u, center = p(headX, headY))
-    drawCircle(Color.White.copy(alpha = 0.35f), radius = 0.7f * u, center = p(headX - 0.6f, headY - 0.7f))
-}
-
-@Suppress("unused")
-private fun angleOf(dx: Float, dy: Float) = atan2(dy, dx)

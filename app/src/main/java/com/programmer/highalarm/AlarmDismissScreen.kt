@@ -2979,8 +2979,8 @@ private fun RepTitlePill(title: String, icon: ImageVector, kind: ExerciseKind? =
             if (kind != null) {
                 AnimatedExerciseIcon(
                     kind = kind,
-                    colors = listOf(Color(0xFF4A3614), Color(0xFF2A1F0E), Color(0xFF140E05)),
-                    modifier = Modifier.size(26.dp),
+                    colors = AthleteInk,
+                    modifier = Modifier.size(30.dp),
                     showFloor = false
                 )
             } else {
