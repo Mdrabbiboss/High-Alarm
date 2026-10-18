@@ -1777,16 +1777,10 @@ fun AlarmCard(
                                 modifier = Modifier.padding(bottom = 4.dp).size(18.dp)
                             )
                         }
-                        Switch(
+                        HaSwitch(
                             checked = alarm.isEnabled,
                             onCheckedChange = { onToggle() },
-                            enabled = !isLocked,
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = MidnightBlue,
-                                checkedTrackColor = SoftAmber,
-                                uncheckedThumbColor = HaMuted,
-                                uncheckedTrackColor = HaTrackOff
-                            )
+                            enabled = !isLocked
                         )
                     }
                 }

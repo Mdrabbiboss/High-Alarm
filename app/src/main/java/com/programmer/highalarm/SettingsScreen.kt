@@ -1152,19 +1152,10 @@ fun SettingsToggleItem(
         }
         Spacer(modifier = Modifier.width(12.dp))
         Box {
-            Box(modifier = Modifier.graphicsLayer(scaleX = 0.85f, scaleY = 0.85f)) {
-                Switch(
+            Box(modifier = Modifier.graphicsLayer(scaleX = 0.92f, scaleY = 0.92f)) {
+                HaSwitch(
                     checked = checked,
-                    onCheckedChange = if (onClick != null) null else onCheckedChange,
-                    enabled = onClick == null,
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = MidnightBlue,
-                        checkedTrackColor = SoftAmber,
-                        uncheckedThumbColor = HaMuted,
-                        uncheckedTrackColor = HaTrackOff,
-                        disabledCheckedTrackColor = SoftAmber,
-                        disabledCheckedThumbColor = MidnightBlue
-                    )
+                    onCheckedChange = if (onClick != null) null else onCheckedChange
                 )
             }
             if (onClick != null) {

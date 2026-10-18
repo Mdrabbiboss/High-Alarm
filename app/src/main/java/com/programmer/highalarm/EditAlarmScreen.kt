@@ -1267,15 +1267,9 @@ fun RepeatBottomSheet(
                                 fontSize = 16.sp,
                                 fontWeight = if (selectedDays.contains(index)) FontWeight.Bold else FontWeight.Normal
                             )
-                            Switch(
+                            HaSwitch(
                                 checked = selectedDays.contains(index),
-                                onCheckedChange = { onToggleDay(index) },
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = MidnightBlue,
-                                    checkedTrackColor = SoftAmber,
-                                    uncheckedThumbColor = HaMuted,
-                                    uncheckedTrackColor = HaIvory.copy(alpha = 0.1f)
-                                )
+                                onCheckedChange = { onToggleDay(index) }
                             )
                         }
                     }
@@ -2572,10 +2566,9 @@ fun EditToggleItem(title: String, subtitle: String, icon: ImageVector, checked: 
                 Text(title, fontWeight = FontWeight.Bold, color = HaIvory, fontSize = 16.sp)
                 Text(subtitle, fontSize = 11.sp, color = HaMuted)
             }
-            Switch(
-                checked = checked, 
-                onCheckedChange = onCheckedChange,
-                colors = SwitchDefaults.colors(checkedTrackColor = SoftAmber, checkedThumbColor = MidnightBlue)
+            HaSwitch(
+                checked = checked,
+                onCheckedChange = onCheckedChange
             )
         }
     }
