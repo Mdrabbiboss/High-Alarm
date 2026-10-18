@@ -283,7 +283,7 @@ fun PremiumSubscriptionScreen(
                 StaggeredItem(index = 5, start = startStaggeredAnimation, isReducedMotion = isReducedMotionEnabled) {
                     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp)) {
                         Text("Why Go Pro?", color = HaIvory, fontWeight = FontWeight.Black, fontSize = 18.sp, modifier = Modifier.padding(start = 4.dp, bottom = 12.dp))
-                        Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), color = HaIvory.copy(alpha = 0.03f), border = BorderStroke(1.dp, HaIvory.copy(alpha = 0.08f))) {
+                        Surface(modifier = Modifier.fillMaxWidth().ha3DPanel(RoundedCornerShape(24.dp), elevation = 12.dp), shape = RoundedCornerShape(24.dp), color = Color.Transparent) {
                             Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                                     Icon(Icons.Default.Cancel, null, tint = HaCoral.copy(alpha = 0.6f), modifier = Modifier.size(22.dp))
@@ -400,9 +400,9 @@ fun StaggeredItem(
 
 @Composable
 fun BenefitRow(icon: ImageVector, title: String, desc: String) {
-    Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = HaIvory.copy(alpha = 0.04f), border = BorderStroke(1.dp, HaIvory.copy(alpha = 0.06f))) {
+    Surface(modifier = Modifier.fillMaxWidth().ha3DPanel(RoundedCornerShape(16.dp), elevation = 8.dp), shape = RoundedCornerShape(16.dp), color = Color.Transparent) {
         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(32.dp).background(SoftAmber.copy(alpha = 0.1f), CircleShape), contentAlignment = Alignment.Center) { Icon(icon, null, tint = SoftAmber, modifier = Modifier.size(18.dp)) }
+            Box(modifier = Modifier.size(32.dp).ha3DGoldCoin(), contentAlignment = Alignment.Center) { Icon(icon, null, tint = Color(0xFF2A1F0E), modifier = Modifier.size(18.dp)) }
             Spacer(modifier = Modifier.width(14.dp))
             Column {
                 Text(title, color = HaIvory, fontSize = 14.sp, fontWeight = FontWeight.Black)

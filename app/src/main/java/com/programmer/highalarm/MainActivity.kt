@@ -1816,8 +1816,8 @@ fun PermissionBanner(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, HaIvory.copy(alpha = 0.1f), RoundedCornerShape(20.dp)),
-        color = HaIvory.copy(alpha = 0.05f),
+            .ha3DPanel(RoundedCornerShape(20.dp), gold = true, elevation = 10.dp),
+        color = Color.Transparent,
         shape = RoundedCornerShape(20.dp)
     ) {
         Row(
@@ -1827,10 +1827,10 @@ fun PermissionBanner(
             Box(
                 modifier = Modifier
                     .size(44.dp)
-                    .background(SoftAmber.copy(alpha = 0.2f), CircleShape),
+                    .ha3DGoldCoin(),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.PriorityHigh, contentDescription = null, tint = SoftAmber, modifier = Modifier.size(24.dp))
+                Icon(Icons.Default.PriorityHigh, contentDescription = null, tint = Color(0xFF2A1F0E), modifier = Modifier.size(24.dp))
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -1855,7 +1855,7 @@ fun DeleteConfirmationDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = HaSurface,
+        containerColor = HaPanel,
         title = {
             Text(
                 text = "Delete Alarm",

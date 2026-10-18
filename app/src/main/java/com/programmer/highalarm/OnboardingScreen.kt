@@ -1428,19 +1428,10 @@ fun Step5SummaryContent(
                 .graphicsLayer {
                     alpha = bodyProgress
                     translationY = bodyOffsetY
-                },
+                }
+                .ha3DPanel(RoundedCornerShape(28.dp), gold = true, elevation = 18.dp),
             shape = RoundedCornerShape(28.dp),
-            color = HaInk.copy(alpha = 0.78f),
-            border = BorderStroke(
-                1.dp,
-                Brush.verticalGradient(
-                    colors = listOf(
-                        HaGold.copy(alpha = 0.35f),
-                        HaHairline.copy(alpha = 0.4f)
-                    )
-                )
-            ),
-            shadowElevation = 16.dp
+            color = Color.Transparent
         ) {
             Column(
                 modifier = Modifier.padding(26.dp),
@@ -1467,9 +1458,9 @@ fun Step5SummaryContent(
                 Spacer(modifier = Modifier.height(18.dp))
 
                 Surface(
+                    modifier = Modifier.ha3DPanel(RoundedCornerShape(14.dp), elevation = 6.dp),
                     shape = RoundedCornerShape(14.dp),
-                    color = HaIvory.copy(alpha = 0.05f),
-                    border = BorderStroke(1.dp, HaIvory.copy(alpha = 0.1f))
+                    color = Color.Transparent
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,

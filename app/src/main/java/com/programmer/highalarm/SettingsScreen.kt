@@ -809,10 +809,11 @@ fun DisableFadeInDialog(
     ) {
         Surface(
             shape = RoundedCornerShape(28.dp),
-            color = HaSurface,
+            color = Color.Transparent,
             modifier = Modifier
                 .fillMaxWidth(0.9f)
                 .padding(16.dp)
+                .ha3DPanel(RoundedCornerShape(28.dp), gold = true, elevation = 20.dp)
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
@@ -911,11 +912,12 @@ fun VibrationSelectionDialog(
     ) {
         Surface(
             shape = RoundedCornerShape(28.dp),
-            color = HaSurface,
+            color = Color.Transparent,
             modifier = Modifier
                 .fillMaxWidth(0.9f)
                 .widthIn(max = 400.dp)
                 .heightIn(max = 520.dp)
+                .ha3DPanel(RoundedCornerShape(28.dp), gold = true, elevation = 20.dp)
         ) {
             Column(
                 modifier = Modifier
