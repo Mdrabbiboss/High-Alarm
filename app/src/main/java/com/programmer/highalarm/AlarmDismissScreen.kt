@@ -2618,6 +2618,7 @@ fun PushUpChallengeView(targetReps: Int, onComplete: () -> Unit) {
         RepCameraChrome(
             title = "PUSH-UP CHALLENGE",
             icon = PushUpIcon,
+            kind = ExerciseKind.PushUp,
             onFlip = {
                 counter.reset(keepReps = true)
                 overlay = null
@@ -2703,6 +2704,7 @@ fun SquatCameraChallengeView(targetReps: Int, onComplete: () -> Unit) {
         RepCameraChrome(
             title = "SQUAT CHALLENGE",
             icon = SquatIcon,
+            kind = ExerciseKind.Squat,
             onFlip = {
                 counter.reset(keepReps = true)
                 overlay = null
@@ -2881,7 +2883,7 @@ fun SquatMotionChallengeView(targetReps: Int, onComplete: () -> Unit) {
                 .navigationBarsPadding()
                 .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
-            RepTitlePill("SQUAT CHALLENGE", SquatIcon)
+            RepTitlePill("SQUAT CHALLENGE", SquatIcon, ExerciseKind.Squat)
             Spacer(modifier = Modifier.weight(1f))
             RepDashboard(
                 reps = reps, target = target, stage = shownStage, depth = if (isGripLocked) depth else 0f,
@@ -2963,7 +2965,7 @@ private fun GripPad(
 }
 
 @Composable
-private fun RepTitlePill(title: String, icon: ImageVector) {
+private fun RepTitlePill(title: String, icon: ImageVector, kind: ExerciseKind? = null) {
     Row(
         modifier = Modifier
             .ha3DBlack(CircleShape, elevation = 10.dp)
@@ -2974,7 +2976,16 @@ private fun RepTitlePill(title: String, icon: ImageVector) {
             modifier = Modifier.size(34.dp).ha3DCoin(HaTone.Gold, elevation = 4.dp),
             contentAlignment = Alignment.Center
         ) {
-            Icon(icon, null, tint = haToneInk(HaTone.Gold), modifier = Modifier.size(18.dp))
+            if (kind != null) {
+                AnimatedExerciseIcon(
+                    kind = kind,
+                    colors = listOf(Color(0xFF4A3614), Color(0xFF2A1F0E), Color(0xFF140E05)),
+                    modifier = Modifier.size(26.dp),
+                    showFloor = false
+                )
+            } else {
+                Icon(icon, null, tint = haToneInk(HaTone.Gold), modifier = Modifier.size(18.dp))
+            }
         }
         Spacer(modifier = Modifier.width(10.dp))
         Text(title, color = HaGoldLight, fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 1.5.sp)
@@ -2986,6 +2997,7 @@ private fun RepTitlePill(title: String, icon: ImageVector) {
 private fun RepCameraChrome(
     title: String,
     icon: ImageVector,
+    kind: ExerciseKind? = null,
     onFlip: () -> Unit,
     showTips: Boolean,
     tips: List<Pair<ImageVector, String>>,
@@ -3014,7 +3026,7 @@ private fun RepCameraChrome(
                 .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                RepTitlePill(title, icon)
+                RepTitlePill(title, icon, kind)
                 Spacer(modifier = Modifier.weight(1f))
                 IconButton(onClick = onFlip, modifier = Modifier.size(46.dp).ha3DOrb()) {
                     Icon(Icons.Default.FlipCameraAndroid, contentDescription = "Switch Camera", tint = HaGoldLight)

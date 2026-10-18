@@ -2724,7 +2724,20 @@ fun ChallengeItem(
                         .size(46.dp)
                         .ha3DOrb()
                 )
-                Icon(
+                when (challenge.id) {
+                    "pushup" -> AnimatedExerciseIcon(
+                        kind = ExerciseKind.PushUp,
+                        colors = iconColorPalette,
+                        modifier = Modifier.size(34.dp),
+                        showFloor = false
+                    )
+                    "squat" -> AnimatedExerciseIcon(
+                        kind = ExerciseKind.Squat,
+                        colors = iconColorPalette,
+                        modifier = Modifier.size(34.dp),
+                        showFloor = false
+                    )
+                    else -> Icon(
                     imageVector = challenge.icon,
                     contentDescription = challenge.name,
                     tint = HaIvory,
@@ -2743,6 +2756,7 @@ fun ChallengeItem(
                             }
                         }
                 )
+                }
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
