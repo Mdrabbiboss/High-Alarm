@@ -61,6 +61,7 @@ jobs:
           mkdir -p out
           cp app/build/outputs/apk/release/*arm64-v8a*.apk out/HighAlarm-release-arm64.apk
           cp app/build/outputs/apk/release/*armeabi-v7a*.apk out/HighAlarm-release-armv7.apk
+          cp app/build/outputs/apk/release/*universal*.apk out/HighAlarm-release-universal.apk
           cp app/build/outputs/apk/debug/*arm64-v8a*.apk out/HighAlarm-debug-arm64.apk
           cp app/build/outputs/bundle/release/*.aab out/HighAlarm-release.aab
           ls -la out
