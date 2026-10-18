@@ -59,6 +59,16 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    // Per-device APKs (only affects APK builds; Play Store AAB is unchanged).
+    // Keeps the test APK small instead of bundling native libs for every CPU.
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a")
+            isUniversalApk = false
+        }
+    }
     buildFeatures {
         compose = true
     }
