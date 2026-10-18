@@ -24,6 +24,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.clickable
@@ -797,8 +798,10 @@ fun MathChallengeView(rounds: Int, difficulty: Int = 1, onComplete: () -> Unit) 
     var f by remember { mutableStateOf(false) }
     
     LaunchedEffect(f) { if (f) { delay(300.milliseconds); f = false; input = "" } }
+    val cue = rememberWrongCue(f)
+    val glow = wrongGlow(cue)
     
-    Box(modifier = Modifier.fillMaxSize().background(if (f) HaCoral.copy(0.4f) else Color.Transparent), Alignment.Center) {
+    Box(modifier = Modifier.fillMaxSize().haWrongBackdrop(cue), Alignment.Center) {
         Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Text(
                 text = "QUESTION $cur OF $rounds", 
@@ -809,12 +812,19 @@ fun MathChallengeView(rounds: Int, difficulty: Int = 1, onComplete: () -> Unit) 
             )
             Spacer(modifier = Modifier.height(24.dp))
             
-            Surface(color = HaIvory.copy(0.05f), shape = RoundedCornerShape(32.dp)) { 
+            Surface(color = HaChallengeSurface, shape = RoundedCornerShape(32.dp), modifier = Modifier.haWrongShake(cue)) { 
                 Column(modifier = Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) { 
                     Text(p.expression, fontSize = 44.sp, fontWeight = FontWeight.Black, color = HaIvory)
                     Spacer(modifier = Modifier.height(24.dp))
-                    Box(modifier = Modifier.fillMaxWidth().height(64.dp).background(Color.Black.copy(0.2f), RoundedCornerShape(16.dp)), Alignment.Center) { 
-                        Text(input.ifEmpty { "ANSWER" }, fontSize = 26.sp, color = if (input.isEmpty()) HaMuted else HaIvory) 
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(64.dp)
+                            .background(androidx.compose.ui.graphics.lerp(Color.Black.copy(0.2f), HaCoral.copy(alpha = 0.14f), glow), RoundedCornerShape(16.dp))
+                            .border(1.5.dp, HaCoral.copy(alpha = 0.9f * glow), RoundedCornerShape(16.dp)),
+                        Alignment.Center
+                    ) { 
+                        Text(input.ifEmpty { "ANSWER" }, fontSize = 26.sp, color = if (glow > 0.25f && input.isNotEmpty()) HaCoral else if (input.isEmpty()) HaMuted else HaIvory) 
                     } 
                 } 
             }
@@ -855,8 +865,10 @@ fun AdvancedMathChallengeView(rounds: Int, difficulty: Int = 1, onComplete: () -
     var errorCount by remember(cur) { mutableIntStateOf(0) }
     
     LaunchedEffect(f) { if (f) { delay(300.milliseconds); f = false; input = "" } }
+    val cue = rememberWrongCue(f)
+    val glow = wrongGlow(cue)
     
-    Box(modifier = Modifier.fillMaxSize().background(if (f) HaCoral.copy(0.4f) else Color.Transparent), Alignment.Center) {
+    Box(modifier = Modifier.fillMaxSize().haWrongBackdrop(cue), Alignment.Center) {
         Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Text(
                 text = "QUESTION $cur OF $rounds", 
@@ -867,7 +879,7 @@ fun AdvancedMathChallengeView(rounds: Int, difficulty: Int = 1, onComplete: () -
             )
             Spacer(modifier = Modifier.height(24.dp))
             
-            Surface(color = HaIvory.copy(0.05f), shape = RoundedCornerShape(32.dp)) { 
+            Surface(color = HaChallengeSurface, shape = RoundedCornerShape(32.dp), modifier = Modifier.haWrongShake(cue)) { 
                 Column(modifier = Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) { 
                     Text(p.expression, fontSize = 32.sp, fontWeight = FontWeight.Black, color = HaIvory)
                     
@@ -876,8 +888,15 @@ fun AdvancedMathChallengeView(rounds: Int, difficulty: Int = 1, onComplete: () -
                     }
                     
                     Spacer(modifier = Modifier.height(24.dp))
-                    Box(modifier = Modifier.fillMaxWidth().height(60.dp).background(Color.Black.copy(0.2f), RoundedCornerShape(16.dp)), Alignment.Center) { 
-                        Text(input.ifEmpty { "ANSWER" }, fontSize = 24.sp, color = if (input.isEmpty()) HaMuted else HaIvory) 
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(60.dp)
+                            .background(androidx.compose.ui.graphics.lerp(Color.Black.copy(0.2f), HaCoral.copy(alpha = 0.14f), glow), RoundedCornerShape(16.dp))
+                            .border(1.5.dp, HaCoral.copy(alpha = 0.9f * glow), RoundedCornerShape(16.dp)),
+                        Alignment.Center
+                    ) { 
+                        Text(input.ifEmpty { "ANSWER" }, fontSize = 24.sp, color = if (glow > 0.25f && input.isNotEmpty()) HaCoral else if (input.isEmpty()) HaMuted else HaIvory) 
                     } 
                 } 
             }
@@ -920,16 +939,18 @@ fun RewriteChallengeView(mode: Int, customText: String, onComplete: () -> Unit) 
             if (input.trim() == target.trim()) onComplete() else f = true 
         } 
     }
+    val cue = rememberWrongCue(f)
     
     val isCorrectSoFar = target.startsWith(input)
     val boxColor = if (f) HaCoral else if (isCorrectSoFar && input.isNotEmpty()) HaJade else SoftAmber
     
-    Box(modifier = Modifier.fillMaxSize().background(if (f) HaCoral.copy(0.3f) else Color.Transparent), Alignment.Center) {
+    Box(modifier = Modifier.fillMaxSize().haWrongBackdrop(cue), Alignment.Center) {
         Column(modifier = Modifier.padding(24.dp).imePadding(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Surface(
-                color = HaIvory.copy(alpha = 0.04f), 
+                color = HaIvory.copy(alpha = 0.04f).compositeOver(HaObsidian), 
                 shape = RoundedCornerShape(32.dp), 
-                border = BorderStroke(1.dp, boxColor.copy(alpha = 0.5f))
+                border = BorderStroke(1.dp, boxColor.copy(alpha = 0.5f)),
+                modifier = Modifier.haWrongShake(cue)
             ) { 
                 Text(target, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = HaJade, textAlign = TextAlign.Center, modifier = Modifier.padding(32.dp)) 
             }
@@ -1165,11 +1186,13 @@ fun StepsChallengeView(targetSteps: Int, onComplete: () -> Unit) {
 fun ClockReadingChallengeView(rounds: Int, difficulty: Int, onComplete: () -> Unit) {
     var cur by remember { mutableIntStateOf(1) }; var input by remember { mutableStateOf("") }; val u = remember { mutableStateListOf<Pair<Int, Int>>() }; var t by remember { mutableStateOf(generateUniqueRandomTime(difficulty, u)) }; var f by remember { mutableStateOf(false) }
     LaunchedEffect(f) { if (f) { delay(400.milliseconds); f = false; input = "" } }
-    Box(modifier = Modifier.fillMaxSize().background(if (f) HaCoral.copy(0.3f) else Color.Transparent), Alignment.Center) {
+    val cue = rememberWrongCue(f)
+    val glow = wrongGlow(cue)
+    Box(modifier = Modifier.fillMaxSize().haWrongBackdrop(cue), Alignment.Center) {
         Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Text("ROUND $cur OF $rounds", color = HaJade, fontWeight = FontWeight.Black); Spacer(modifier = Modifier.height(24.dp))
-            AnalogClock(t.first, t.second, difficulty, Modifier.size(240.dp)); Spacer(modifier = Modifier.height(24.dp))
-            Text(formatTimeInput(input).ifEmpty { "H:MM" }, fontSize = 34.sp, fontWeight = FontWeight.Black, color = HaIvory)
+            AnalogClock(t.first, t.second, difficulty, Modifier.size(240.dp).haWrongShake(cue)); Spacer(modifier = Modifier.height(24.dp))
+            Text(formatTimeInput(input).ifEmpty { "H:MM" }, fontSize = 34.sp, fontWeight = FontWeight.Black, color = androidx.compose.ui.graphics.lerp(HaIvory, HaCoral, glow), modifier = Modifier.haWrongShake(cue))
             Spacer(modifier = Modifier.height(24.dp)); CustomKeypad { k -> if (k == "OK") { if (formatTimeInput(input) == String.format(Locale.getDefault(), "%d:%02d", if (t.first == 0) 12 else t.first, t.second)) { u.add(t); if (cur < rounds) { cur++; t = generateUniqueRandomTime(difficulty, u); input = "" } else onComplete() } else f = true } else if (k == "DEL") { if (input.isNotEmpty()) input = input.dropLast(1) } else if (input.length < 4) input += k }
         }
     }
@@ -3847,7 +3870,7 @@ fun AudioMemoryChallengeView(rounds: Int, difficulty: Int, onComplete: () -> Uni
 @Composable
 fun CustomKeypad(onPress: (String) -> Unit) {
     val keys = listOf(listOf("1", "2", "3"), listOf("4", "5", "6"), listOf("7", "8", "9"), listOf("-", "0", "DEL"), listOf(".", "OK"))
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) { keys.forEach { row -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { row.forEach { k -> Surface(onClick = { onPress(k) }, modifier = Modifier.weight(1f).height(64.dp), shape = RoundedCornerShape(16.dp), color = if (k == "OK") SoftAmber else HaIvory.copy(alpha = 0.05f)) { Box(contentAlignment = Alignment.Center) { if (k == "DEL") Icon(Icons.AutoMirrored.Filled.Backspace, null) else Text(k, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = if (k == "OK") MidnightBlue else HaIvory) } } } } } }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) { keys.forEach { row -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { row.forEach { k -> Surface(onClick = { onPress(k) }, modifier = Modifier.weight(1f).height(64.dp), shape = RoundedCornerShape(16.dp), color = if (k == "OK") SoftAmber else HaChallengeSurface) { Box(contentAlignment = Alignment.Center) { if (k == "DEL") Icon(Icons.AutoMirrored.Filled.Backspace, null) else Text(k, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = if (k == "OK") MidnightBlue else HaIvory) } } } } } }
 }
 
 @SuppressLint("NewApi")
