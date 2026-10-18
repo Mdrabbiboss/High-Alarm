@@ -41,6 +41,20 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.automirrored.filled.Label
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.foundation.gestures.snapping.SnapLayoutInfoProvider
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.horizontalScroll
@@ -2594,22 +2608,66 @@ fun EditToggleItem(title: String, subtitle: String, icon: ImageVector, checked: 
 
 @Composable
 fun EditTextFieldItem(label: String, value: String, onValueChange: (String) -> Unit) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label, color = HaMuted) },
+    // Same raised 3D card as Repeat / Ringtone, with the text typed right inside it.
+    val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
+    var focused by remember { mutableStateOf(false) }
+    val shape = RoundedCornerShape(20.dp)
+    val tapSource = remember { MutableInteractionSource() }
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp)
-            .ha3DInset(RoundedCornerShape(16.dp)),
-        shape = RoundedCornerShape(16.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = SoftAmber,
-            unfocusedBorderColor = Color.Transparent,
-            focusedTextColor = HaIvory,
-            unfocusedTextColor = HaIvory
-        )
-    )
+            .ha3DPanel(shape, elevation = 10.dp)
+            .border(1.dp, if (focused) HaGold.copy(alpha = 0.8f) else Color.Transparent, shape)
+            .clickable(interactionSource = tapSource, indication = null) { focusRequester.requestFocus() }
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.AutoMirrored.Filled.Label, contentDescription = null, tint = HaGold, modifier = Modifier.size(24.dp))
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(label, fontWeight = FontWeight.Bold, color = HaIvory, fontSize = 16.sp)
+                Box(modifier = Modifier.padding(top = 2.dp)) {
+                    if (value.isEmpty()) {
+                        Text("Add a name, e.g. Gym, Work", fontSize = 12.sp, color = HaMuted, maxLines = 1)
+                    }
+                    BasicTextField(
+                        value = value,
+                        onValueChange = onValueChange,
+                        singleLine = true,
+                        textStyle = TextStyle(color = SoftAmber, fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
+                        cursorBrush = SolidColor(HaGold),
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Sentences,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(focusRequester)
+                            .onFocusChanged { focused = it.isFocused }
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(10.dp))
+            if (value.isNotEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .ha3DOrb()
+                        .clickable { onValueChange("") },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.Close, contentDescription = "Clear", tint = HaMuted, modifier = Modifier.size(14.dp))
+                }
+            } else {
+                Icon(Icons.Default.Edit, contentDescription = null, tint = HaMuted, modifier = Modifier.size(18.dp))
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)

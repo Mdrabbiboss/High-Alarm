@@ -11,6 +11,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -51,6 +52,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
@@ -895,9 +899,7 @@ fun DisableFadeInDialog(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-@Suppress("DEPRECATION")
 fun VibrationSelectionDialog(
     currentPattern: String,
     isPremium: Boolean,
@@ -905,122 +907,191 @@ fun VibrationSelectionDialog(
     onSelect: (String) -> Unit
 ) {
     val context = LocalContext.current
-    AlertDialog(
+    val maxH = (LocalConfiguration.current.screenHeightDp * 0.82f).dp
+    Dialog(
         onDismissRequest = onDismiss,
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Surface(
-            shape = RoundedCornerShape(28.dp),
-            color = Color.Transparent,
+        // Deep, even dim behind the card (plus a soft blur on phones that support it)
+        val view = LocalView.current
+        LaunchedEffect(Unit) {
+            (view.parent as? DialogWindowProvider)?.window?.let { w ->
+                w.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+                w.setDimAmount(0.72f)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    try {
+                        w.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                        w.attributes = w.attributes.also { it.blurBehindRadius = 36 }
+                    } catch (_: Exception) { }
+                }
+            }
+        }
+        val cardShape = RoundedCornerShape(30.dp)
+        Column(
             modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .widthIn(max = 400.dp)
-                .heightIn(max = 520.dp)
-                .ha3DPanelDeep(RoundedCornerShape(28.dp))
+                .padding(horizontal = 20.dp)
+                .fillMaxWidth()
+                .widthIn(max = 420.dp)
+                .heightIn(max = maxH)
+                .ha3DPanelDeep(cardShape),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // ---- Header (stays put) ----
+            Spacer(modifier = Modifier.height(22.dp))
+            Box(
+                modifier = Modifier.size(58.dp).ha3DCoin(HaTone.Gold, elevation = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Vibration, contentDescription = null, tint = haToneInk(HaTone.Gold), modifier = Modifier.size(28.dp))
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Text("Custom Vibration", fontSize = 21.sp, fontWeight = FontWeight.Black, color = HaIvory)
+            Text("Tap a pattern to feel it", fontSize = 13.sp, color = HaMuted, modifier = Modifier.padding(top = 3.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+            VibrationHairline()
+
+            // ---- Patterns (scroll) ----
             Column(
                 modifier = Modifier
-                    .padding(20.dp)
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Box(
-                    modifier = Modifier.size(46.dp).ha3DCoin(HaTone.Gold, elevation = 6.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Default.Vibration, contentDescription = null, tint = SoftAmber, modifier = Modifier.size(24.dp))
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-                Text("Custom Vibration", fontSize = 20.sp, fontWeight = FontWeight.Black, color = HaIvory)
-                Text("Choose how your alarm vibrates", fontSize = 13.sp, color = HaMuted, modifier = Modifier.padding(top = 2.dp))
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
                 VibrationPattern.all.forEach { pattern ->
                     val isSelected = pattern.name == currentPattern
                     val isLocked = pattern.isPremium && !isPremium
-                    
-                    Surface(
-                        onClick = { 
+                    VibrationPatternRow(
+                        name = pattern.name,
+                        icon = pattern.icon,
+                        isSelected = isSelected,
+                        isLocked = isLocked,
+                        onClick = {
                             if (!isLocked) {
                                 onSelect(pattern.name)
                                 VibrationUtils.vibrate(context, pattern.pattern, amplitudes = pattern.amplitudes)
                             }
-                        },
-                        color = if (isSelected) HaGoldSelectedFill else Color.Transparent,
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
-                        border = if (isSelected) BorderStroke(1.dp, SoftAmber) else null
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                pattern.icon, 
-                                contentDescription = null, 
-                                tint = if (isSelected) SoftAmber else if (isLocked) HaIvory.copy(alpha = 0.6f) else HaIvory,
-                                modifier = Modifier.size(22.dp)
-                            )
-                            Spacer(modifier = Modifier.width(14.dp))
-                            Text(
-                                pattern.name, 
-                                color = if (isSelected) SoftAmber else if (isLocked) HaIvory.copy(alpha = 0.6f) else HaIvory,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.weight(1f)
-                            )
-                            if (isSelected) {
-                                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = SoftAmber, modifier = Modifier.size(18.dp))
-                            } else if (isLocked) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(24.dp)
-                                        .background(SoftAmber.copy(alpha = 0.12f), CircleShape)
-                                        .border(1.dp, SoftAmber.copy(alpha = 0.3f), CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        Icons.Default.Lock,
-                                        contentDescription = "Locked",
-                                        tint = SoftAmber,
-                                        modifier = Modifier.size(13.dp)
-                                    )
-                                }
-                            }
                         }
-                    }
-                }
-                
-                if (!isPremium) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Surface(
-                        color = SoftAmber.copy(alpha = 0.1f),
-                        shape = RoundedCornerShape(14.dp),
-                        border = BorderStroke(1.dp, SoftAmber.copy(alpha = 0.3f)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(modifier = Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(22.dp)
-                                    .background(SoftAmber.copy(alpha = 0.15f), CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Default.Lock, contentDescription = null, tint = SoftAmber, modifier = Modifier.size(12.dp))
-                            }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Upgrade to Premium to unlock all vibration patterns", fontSize = 11.sp, color = SoftAmber, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {
-                    Text("DONE", color = SoftAmber, fontWeight = FontWeight.Black)
+                    )
                 }
             }
+
+            // ---- Footer (stays put) ----
+            VibrationHairline()
+            Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                if (!isPremium) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .ha3DPanelSelected(RoundedCornerShape(16.dp), elevation = 4.dp)
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier.size(30.dp).ha3DCoin(HaTone.Gold, elevation = 3.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.WorkspacePremium, contentDescription = null, tint = haToneInk(HaTone.Gold), modifier = Modifier.size(17.dp))
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Unlock every pattern", fontSize = 13.sp, color = HaGoldLight, fontWeight = FontWeight.Black)
+                            Text("Upgrade to Premium for all vibration styles", fontSize = 11.sp, color = HaMuted)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+                HaGoldButton(text = "Done", onClick = onDismiss, height = 52.dp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun VibrationHairline() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .height(1.dp)
+            .background(Brush.horizontalGradient(listOf(Color.Transparent, HaGold.copy(alpha = 0.35f), Color.Transparent)))
+    )
+}
+
+@Composable
+private fun VibrationPatternRow(
+    name: String,
+    icon: ImageVector,
+    isSelected: Boolean,
+    isLocked: Boolean,
+    onClick: () -> Unit
+) {
+    val shape = RoundedCornerShape(16.dp)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (isSelected) Modifier.ha3DPanelSelected(shape, elevation = 6.dp)
+                else Modifier.ha3DBlack(shape, elevation = 3.dp)
+            )
+            .clip(shape)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(38.dp)
+                .then(if (isSelected) Modifier.ha3DCoin(HaTone.Gold, elevation = 4.dp) else Modifier.ha3DOrb()),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = when {
+                    isSelected -> haToneInk(HaTone.Gold)
+                    isLocked -> HaIvory.copy(alpha = 0.45f)
+                    else -> HaGoldLight
+                },
+                modifier = Modifier.size(20.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(14.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                name,
+                color = when {
+                    isSelected -> HaGoldLight
+                    isLocked -> HaIvory.copy(alpha = 0.62f)
+                    else -> HaIvory
+                },
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                when {
+                    isSelected -> "Selected"
+                    isLocked -> "Premium"
+                    else -> "Tap to preview"
+                },
+                color = if (isSelected) HaGold else HaMuted,
+                fontSize = 11.sp
+            )
+        }
+        when {
+            isSelected -> Box(
+                modifier = Modifier.size(26.dp).ha3DCoin(HaTone.Gold, elevation = 3.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Check, contentDescription = "Selected", tint = haToneInk(HaTone.Gold), modifier = Modifier.size(16.dp))
+            }
+            isLocked -> Box(
+                modifier = Modifier.size(26.dp).ha3DOrb(),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Lock, contentDescription = "Locked", tint = HaGold, modifier = Modifier.size(13.dp))
+            }
+            else -> Icon(Icons.Default.PlayArrow, contentDescription = null, tint = HaMuted, modifier = Modifier.size(20.dp))
         }
     }
 }
