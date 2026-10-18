@@ -49,13 +49,13 @@ fun AnimatedExerciseIcon(
         targetValue = 0f,
         animationSpec = infiniteRepeatable(
             animation = keyframes {
-                durationMillis = 2800
+                durationMillis = 3000
                 0f at 0 using LinearEasing
-                0f at 1000 using FastOutSlowInEasing   // rest at the top
-                1f at 1650 using LinearEasing           // smooth descent
-                1f at 1850 using FastOutSlowInEasing    // brief pause at the bottom
-                0f at 2500 using LinearEasing           // drive back up
-                0f at 2800
+                0f at 950 using RepEase       // rest at the top
+                1f at 1700 using LinearEasing  // controlled descent
+                1f at 1950 using RepEase       // short pause at the bottom
+                0f at 2650 using LinearEasing  // drive back up
+                0f at 3000
             },
             repeatMode = RepeatMode.Restart
         ),
@@ -78,6 +78,8 @@ fun AnimatedExerciseIcon(
 
 private fun lerp(a: Float, b: Float, t: Float) = a + (b - a) * t
 
+private val RepEase = androidx.compose.animation.core.CubicBezierEasing(0.45f, 0f, 0.25f, 1f)
+
 /** Elbow / knee position from two fixed limb lengths (2-bone IK). */
 private fun solveJoint(
     ax: Float, ay: Float, bx: Float, by: Float,
@@ -93,18 +95,42 @@ private fun solveJoint(
 }
 
 private fun DrawScope.limb(points: List<Offset>, brush: Brush, width: Float) {
-    val path = Path().apply {
-        moveTo(points[0].x, points[0].y)
-        for (i in 1 until points.size) lineTo(points[i].x, points[i].y)
+    fun pathOf(dy: Float) = Path().apply {
+        moveTo(points[0].x, points[0].y + dy)
+        for (i in 1 until points.size) lineTo(points[i].x, points[i].y + dy)
     }
-    drawPath(path, brush, style = Stroke(width = width, cap = StrokeCap.Round, join = StrokeJoin.Round))
+    // soft drop shadow -> the limb sits slightly above the surface
+    drawPath(
+        pathOf(width * 0.22f), Color.Black.copy(alpha = 0.42f),
+        style = Stroke(width = width * 1.12f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+    )
+    // body of the limb
+    drawPath(pathOf(0f), brush, style = Stroke(width = width, cap = StrokeCap.Round, join = StrokeJoin.Round))
+    // glossy highlight along the lit (upper) side
+    drawPath(
+        pathOf(-width * 0.22f), Color.White.copy(alpha = 0.32f),
+        style = Stroke(width = width * 0.26f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+    )
+}
+
+/** A lit sphere with a soft shadow and a specular glint. */
+private fun DrawScope.sphereHead(center: Offset, radius: Float, colors: List<Color>) {
+    drawCircle(Color.Black.copy(alpha = 0.42f), radius = radius * 1.04f, center = Offset(center.x, center.y + radius * 0.22f))
+    drawCircle(
+        Brush.radialGradient(
+            listOf(colors.first(), colors.getOrElse(1) { colors.first() }, colors.last()),
+            center = Offset(center.x - radius * 0.35f, center.y - radius * 0.4f),
+            radius = radius * 1.7f
+        ),
+        radius = radius, center = center
+    )
+    drawCircle(Color.White.copy(alpha = 0.55f), radius = radius * 0.26f, center = Offset(center.x - radius * 0.32f, center.y - radius * 0.38f))
 }
 
 private fun DrawScope.floorAndShadow(
     u: Float, p: (Float, Float) -> Offset, colors: List<Color>,
     x0: Float, x1: Float, y: Float, shadowCx: Float, shadowW: Float, show: Boolean
 ) {
-    if (!show) return
     // soft contact shadow that breathes with the movement
     val c = p(shadowCx, y)
     drawOval(
@@ -115,6 +141,7 @@ private fun DrawScope.floorAndShadow(
         topLeft = Offset(c.x - shadowW * u, c.y - 1.1f * u),
         size = Size(shadowW * 2 * u, 2.2f * u)
     )
+    if (!show) return
     drawLine(
         brush = Brush.horizontalGradient(
             listOf(Color.Transparent, colors.last().copy(alpha = 0.9f), Color.Transparent),
@@ -151,9 +178,7 @@ private fun DrawScope.drawPushUp(
     val nx = dx / len; val ny = dy / len
     val hx = sx + nx * 2.5f + ny * 0.9f
     val hy = sy + ny * 2.5f - nx * 0.9f
-    drawCircle(body, radius = 2.15f * u, center = p(hx, hy))
-    // tiny specular highlight for a 3D feel
-    drawCircle(Color.White.copy(alpha = 0.35f), radius = 0.7f * u, center = p(hx - 0.6f, hy - 0.7f))
+    sphereHead(p(hx, hy), 2.15f * u, colors)
 }
 
 private fun DrawScope.drawSquat(
@@ -187,8 +212,7 @@ private fun DrawScope.drawSquat(
     // arms
     limb(listOf(p(sx, sy + 0.4f), p(wx, wy)), body, 1.9f * u)
     // head
-    drawCircle(body, radius = 2.05f * u, center = p(headX, headY))
-    drawCircle(Color.White.copy(alpha = 0.35f), radius = 0.7f * u, center = p(headX - 0.6f, headY - 0.7f))
+    sphereHead(p(headX, headY), 2.05f * u, colors)
 }
 
 @Suppress("unused")
