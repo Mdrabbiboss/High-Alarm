@@ -1439,224 +1439,102 @@ fun AlarmMainScreen(
 
 @Composable
 fun NextAlarmSummaryCard(info: NextAlarmInfo) {
-    // Parse "hh:mm AM" (or "HH:mm") defensively for the dial marker.
-    val alarmFraction = remember(info.time) {
-        try {
-            val clock = info.time.substringBefore(" ").trim()
-            val suffix = info.time.substringAfter(" ", "").trim().uppercase()
-            var h = clock.substringBefore(":").toInt()
-            val m = clock.substringAfter(":").take(2).toInt()
-            if (suffix == "PM" && h < 12) h += 12
-            if (suffix == "AM" && h == 12) h = 0
-            ((h % 12) * 60 + m) / 720f
-        } catch (e: Exception) {
-            null
-        }
-    }
-    val nowFraction = remember(info.remainingFormatted) {
-        val c = java.util.Calendar.getInstance()
-        ((c.get(java.util.Calendar.HOUR) % 12) * 60 + c.get(java.util.Calendar.MINUTE)) / 720f
-    }
-
-    val pulse = rememberInfiniteTransition(label = "dial_pulse")
-    val glow by pulse.animateFloat(
-        initialValue = 0.35f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(1600, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label = "glow"
-    )
-    val sheen by pulse.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(tween(14000, easing = LinearEasing)),
-        label = "sheen"
-    )
-
-    Column(
+    val cardShape = RoundedCornerShape(32.dp)
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 4.dp, bottom = 18.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(vertical = 8.dp)
+            .shadow(24.dp, cardShape, ambientColor = HaGold.copy(alpha = 0.18f), spotColor = HaGold.copy(alpha = 0.22f))
+            .clip(cardShape)
+            .background(
+                Brush.linearGradient(
+                    listOf(Color(0xFF221C14), Color(0xFF17161B), Color(0xFF111015)),
+                    start = Offset(0f, 0f),
+                    end = Offset(900f, 900f)
+                )
+            )
+            .border(
+                1.dp,
+                Brush.linearGradient(
+                    listOf(HaGoldLight.copy(alpha = 0.55f), HaGold.copy(alpha = 0.06f), HaGoldDeep.copy(alpha = 0.35f))
+                ),
+                cardShape
+            )
     ) {
+        // soft champagne light from the top
         Box(
-            modifier = Modifier.size(272.dp),
-            contentAlignment = Alignment.Center
+            modifier = Modifier
+                .matchParentSize()
+                .background(
+                    Brush.radialGradient(
+                        listOf(HaGold.copy(alpha = 0.10f), Color.Transparent),
+                        center = Offset(450f, 0f),
+                        radius = 700f
+                    )
+                )
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 26.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val c = Offset(size.width / 2f, size.height / 2f)
-                val outerR = size.minDimension / 2f - 6.dp.toPx()
-
-                // Soft champagne halo behind the dial
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        listOf(HaGold.copy(alpha = 0.10f), HaGold.copy(alpha = 0.02f), Color.Transparent),
-                        center = c, radius = outerR * 1.15f
-                    ),
-                    radius = outerR * 1.15f, center = c
-                )
-                // Dial face: brushed obsidian
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        listOf(Color(0xFF1C1B20), Color(0xFF111015), Color(0xFF0A0A0D)),
-                        center = Offset(c.x - outerR * 0.25f, c.y - outerR * 0.35f),
-                        radius = outerR * 1.3f
-                    ),
-                    radius = outerR - 10.dp.toPx(), center = c
-                )
-                // Rotating metallic bezel
-                drawCircle(
-                    brush = Brush.sweepGradient(
-                        listOf(
-                            HaGoldDeep.copy(alpha = 0.55f), HaGoldPale.copy(alpha = 0.95f),
-                            HaGoldDeep.copy(alpha = 0.45f), HaBronze.copy(alpha = 0.6f),
-                            HaGoldLight.copy(alpha = 0.85f), HaGoldDeep.copy(alpha = 0.55f)
-                        ),
-                        center = c
-                    ),
-                    radius = outerR, center = c,
-                    style = Stroke(width = 2.2.dp.toPx())
-                )
-                // inner hairline
-                drawCircle(
-                    color = HaGold.copy(alpha = 0.14f),
-                    radius = outerR - 10.dp.toPx(), center = c,
-                    style = Stroke(width = 1.dp.toPx())
-                )
-                // moving glint on bezel
-                val glintA = Math.toRadians((sheen - 90f).toDouble())
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        listOf(HaGoldPale.copy(alpha = 0.55f), Color.Transparent),
-                        center = Offset(c.x + outerR * kotlin.math.cos(glintA).toFloat(), c.y + outerR * kotlin.math.sin(glintA).toFloat()),
-                        radius = 18.dp.toPx()
-                    ),
-                    radius = 18.dp.toPx(),
-                    center = Offset(c.x + outerR * kotlin.math.cos(glintA).toFloat(), c.y + outerR * kotlin.math.sin(glintA).toFloat())
-                )
-
-                // Minute ticks (60) with gold hour indices
-                val tickOuter = outerR - 16.dp.toPx()
-                for (i in 0 until 60) {
-                    val a = Math.toRadians((i * 6 - 90).toDouble())
-                    val isHour = i % 5 == 0
-                    val isQuarter = i % 15 == 0
-                    val len = when {
-                        isQuarter -> 12.dp.toPx()
-                        isHour -> 8.dp.toPx()
-                        else -> 3.dp.toPx()
-                    }
-                    val cosA = kotlin.math.cos(a).toFloat()
-                    val sinA = kotlin.math.sin(a).toFloat()
-                    drawLine(
-                        color = when {
-                            isQuarter -> HaGoldLight
-                            isHour -> HaGold.copy(alpha = 0.7f)
-                            else -> Color.White.copy(alpha = 0.16f)
-                        },
-                        start = Offset(c.x + tickOuter * cosA, c.y + tickOuter * sinA),
-                        end = Offset(c.x + (tickOuter - len) * cosA, c.y + (tickOuter - len) * sinA),
-                        strokeWidth = if (isQuarter) 2.5.dp.toPx() else if (isHour) 1.6.dp.toPx() else 1.dp.toPx(),
-                        cap = androidx.compose.ui.graphics.StrokeCap.Round
+            Box(
+                modifier = Modifier
+                    .size(52.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.radialGradient(listOf(HaGold.copy(alpha = 0.22f), HaGold.copy(alpha = 0.06f)))
                     )
-                }
-
-                // Arc from "now" to the alarm on the 12h dial
-                val arcR = outerR - 34.dp.toPx()
-                if (alarmFraction != null) {
-                    val startDeg = nowFraction * 360f - 90f
-                    var sweep = (alarmFraction - nowFraction) * 360f
-                    if (sweep <= 0f) sweep += 360f
-                    drawArc(
-                        color = Color.White.copy(alpha = 0.05f),
-                        startAngle = 0f, sweepAngle = 360f, useCenter = false,
-                        topLeft = Offset(c.x - arcR, c.y - arcR),
-                        size = androidx.compose.ui.geometry.Size(arcR * 2, arcR * 2),
-                        style = Stroke(width = 3.dp.toPx())
-                    )
-                    drawArc(
-                        brush = Brush.sweepGradient(listOf(HaGoldDeep, HaGoldLight, HaGold, HaGoldDeep), center = c),
-                        startAngle = startDeg, sweepAngle = sweep, useCenter = false,
-                        topLeft = Offset(c.x - arcR, c.y - arcR),
-                        size = androidx.compose.ui.geometry.Size(arcR * 2, arcR * 2),
-                        style = Stroke(width = 3.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
-                    )
-                    // glowing jewel at the alarm position
-                    val ea = Math.toRadians((alarmFraction * 360f - 90f).toDouble())
-                    val jewel = Offset(c.x + arcR * kotlin.math.cos(ea).toFloat(), c.y + arcR * kotlin.math.sin(ea).toFloat())
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            listOf(HaGold.copy(alpha = 0.55f * glow), Color.Transparent),
-                            center = jewel, radius = 16.dp.toPx()
-                        ),
-                        radius = 16.dp.toPx(), center = jewel
-                    )
-                    drawCircle(color = HaGoldPale, radius = 5.dp.toPx(), center = jewel)
-                    drawCircle(color = HaObsidian, radius = 2.dp.toPx(), center = jewel)
-                }
-            }
-
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    .border(
+                        1.dp,
+                        Brush.linearGradient(listOf(HaGoldPale.copy(alpha = 0.8f), HaGoldDeep.copy(alpha = 0.4f))),
+                        CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
                 Icon(
                     Icons.Default.NotificationsActive,
                     contentDescription = null,
-                    tint = HaGold,
-                    modifier = Modifier.size(18.dp)
+                    tint = HaGoldLight,
+                    modifier = Modifier.size(24.dp)
                 )
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = "NEXT ALARM",
-                    color = HaGold.copy(alpha = 0.85f),
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 3.sp
-                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "Next alarm in ${info.remainingFormatted}",
+                color = HaGoldPale.copy(alpha = 0.7f),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 0.6.sp
+            )
+
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                modifier = Modifier.padding(top = 4.dp)
+            ) {
                 Text(
                     text = info.time.substringBefore(" "),
                     style = androidx.compose.ui.text.TextStyle(
-                        brush = Brush.verticalGradient(listOf(HaIvory, HaGoldPale))
+                        brush = Brush.verticalGradient(listOf(Color.White, HaIvory, HaGoldPale))
                     ),
                     fontSize = 54.sp,
-                    fontWeight = FontWeight.Light,
-                    letterSpacing = (-1.5).sp,
-                    lineHeight = 58.sp
+                    fontWeight = FontWeight.Black,
+                    lineHeight = 54.sp
                 )
                 if (info.time.contains(" ")) {
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = info.time.substringAfter(" "),
-                        color = HaGold,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = 4.sp
+                        style = androidx.compose.ui.text.TextStyle(brush = HaGoldHorizontal),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.sp,
+                        modifier = Modifier.padding(bottom = 9.dp)
                     )
                 }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Surface(
-            color = HaGold.copy(alpha = 0.08f),
-            shape = RoundedCornerShape(50),
-            border = BorderStroke(1.dp, HaGold.copy(alpha = 0.25f))
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 7.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(6.dp)
-                        .clip(CircleShape)
-                        .background(HaGold.copy(alpha = 0.5f + 0.5f * glow))
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Rings in ${info.remainingFormatted}",
-                    color = HaGoldPale,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
-                    letterSpacing = 0.5.sp
-                )
             }
         }
     }
@@ -1847,53 +1725,38 @@ fun AlarmCard(
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text(
                             text = alarm.time.substringBefore(" "),
-                            fontSize = 40.sp,
-                            fontWeight = FontWeight.Light,
-                            letterSpacing = (-1).sp,
+                            fontSize = 34.sp,
+                            fontWeight = FontWeight.Black,
                             color = HaIvory.copy(alpha = cardAlpha),
-                            lineHeight = 42.sp
+                            lineHeight = 36.sp
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = alarm.time.substringAfter(" "),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            letterSpacing = 2.sp,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = 1.sp,
                             color = (if (alarm.isEnabled) SoftAmber else HaMuted).copy(alpha = cardAlpha),
-                            modifier = Modifier.padding(bottom = 7.dp)
+                            modifier = Modifier.padding(bottom = 4.dp)
                         )
                     }
                     
                     // Days Display
                     Row(
-                        modifier = Modifier.padding(top = 8.dp),
+                        modifier = Modifier.padding(top = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         val days = listOf("S", "M", "T", "W", "T", "F", "S")
                         days.forEachIndexed { index, day ->
                             val isDaySelected = alarm.repeatDays.contains(index)
-                            Box(
-                                modifier = Modifier
-                                    .size(22.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        if (isDaySelected) HaGold.copy(alpha = 0.16f * cardAlpha) else Color.Transparent
-                                    )
-                                    .border(
-                                        1.dp,
-                                        if (isDaySelected) HaGold.copy(alpha = 0.55f * cardAlpha) else HaIvory.copy(alpha = 0.07f),
-                                        CircleShape
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = day,
-                                    fontSize = 10.sp,
-                                    fontWeight = if (isDaySelected) FontWeight.Bold else FontWeight.Medium,
-                                    color = if (isDaySelected) HaGoldPale.copy(alpha = cardAlpha) else HaMuted.copy(alpha = cardAlpha * 0.6f)
-                                )
-                            }
+                            Text(
+                                text = day,
+                                fontSize = 11.sp,
+                                fontWeight = if (isDaySelected) FontWeight.ExtraBold else FontWeight.Medium,
+                                color = if (isDaySelected) HaGold.copy(alpha = cardAlpha) else HaMuted.copy(alpha = cardAlpha * 0.45f),
+                                modifier = Modifier.padding(end = 4.dp)
+                            )
                         }
                     }
 
