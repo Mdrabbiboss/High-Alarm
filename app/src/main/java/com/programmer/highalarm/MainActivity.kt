@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
@@ -309,7 +310,16 @@ class MainActivity : ComponentActivity() {
                     val isTriggered = (isInitialTrigger || (AlarmService.isRinging && !AlarmService.isPreviewActive))
                     val startDest = if (isTriggered) "dismiss" else if (!isOnboardingCompleted) "onboarding" else "main"
 
-                    NavHost(navController = navController, startDestination = startDest) {
+                    NavHost(
+                        navController = navController,
+                        startDestination = startDest,
+                        // Premium "depth" motion for every screen change: the old screen
+                        // dissolves back, the new one rises into place (and the reverse on back).
+                        enterTransition = { haScreenEnter() },
+                        exitTransition = { haScreenExitBehind() },
+                        popEnterTransition = { haScreenPopEnterBehind() },
+                        popExitTransition = { haScreenPopExit() }
+                    ) {
                         composable("onboarding") {
                             OnboardingScreen(
                                 viewModel = viewModel,
@@ -359,7 +369,10 @@ class MainActivity : ComponentActivity() {
                                     type = NavType.BoolType
                                     defaultValue = false
                                 }
-                            )
+                            ),
+                            // grows out of the gear button and shrinks back into it
+                            enterTransition = { haScreenEnter(HaOriginGear) },
+                            popExitTransition = { haScreenPopExit(HaOriginGear) }
                         ) { backStackEntry ->
                             val highlightPreventUninstall = backStackEntry.arguments?.getBoolean("highlightPreventUninstall") ?: false
                             SettingsScreen(
@@ -399,7 +412,16 @@ class MainActivity : ComponentActivity() {
                                     type = NavType.IntType
                                     defaultValue = -1
                                 }
-                            )
+                            ),
+                            // a new alarm grows out of the + button; an existing one from the centre
+                            enterTransition = {
+                                val isNew = (targetState.arguments?.getInt("alarmId") ?: -1) == -1
+                                haScreenEnter(if (isNew) HaOriginFab else TransformOrigin.Center)
+                            },
+                            popExitTransition = {
+                                val isNew = (initialState.arguments?.getInt("alarmId") ?: -1) == -1
+                                haScreenPopExit(if (isNew) HaOriginFab else TransformOrigin.Center)
+                            }
                         ) { backStackEntry ->
                             val alarmIdArg = backStackEntry.arguments?.getInt("alarmId") ?: -1
                             LaunchedEffect(alarmIdArg) {
@@ -1937,3 +1959,39 @@ private fun ChallengeCoin(icon: ImageVector, active: Boolean, modifier: Modifier
         )
     }
 }
+
+// ── Premium screen transitions ──────────────────────────────────────────
+// A "fade-through with depth": the outgoing screen quickly dissolves while
+// easing away, then the incoming one rises in with a soft emphasized curve,
+// so the two never smear over each other.
+
+private val HaMotionEmphasized = CubicBezierEasing(0.2f, 0f, 0f, 1f)
+private val HaMotionAccelerate = CubicBezierEasing(0.3f, 0f, 0.8f, 0.15f)
+
+/** Gear button (top-right) and + button (bottom-right) as zoom origins. */
+private val HaOriginGear = TransformOrigin(0.9f, 0.07f)
+private val HaOriginFab = TransformOrigin(0.88f, 0.94f)
+
+private fun haScreenEnter(origin: TransformOrigin = TransformOrigin.Center): EnterTransition =
+    fadeIn(tween(durationMillis = 300, delayMillis = 110, easing = LinearOutSlowInEasing)) +
+        scaleIn(
+            initialScale = 0.88f,
+            transformOrigin = origin,
+            animationSpec = tween(durationMillis = 480, delayMillis = 60, easing = HaMotionEmphasized)
+        )
+
+private fun haScreenExitBehind(): ExitTransition =
+    fadeOut(tween(durationMillis = 150, easing = HaMotionAccelerate)) +
+        scaleOut(targetScale = 1.05f, animationSpec = tween(durationMillis = 300, easing = HaMotionAccelerate))
+
+private fun haScreenPopEnterBehind(): EnterTransition =
+    fadeIn(tween(durationMillis = 300, delayMillis = 110, easing = LinearOutSlowInEasing)) +
+        scaleIn(initialScale = 1.05f, animationSpec = tween(durationMillis = 480, delayMillis = 60, easing = HaMotionEmphasized))
+
+private fun haScreenPopExit(origin: TransformOrigin = TransformOrigin.Center): ExitTransition =
+    fadeOut(tween(durationMillis = 170, easing = HaMotionAccelerate)) +
+        scaleOut(
+            targetScale = 0.88f,
+            transformOrigin = origin,
+            animationSpec = tween(durationMillis = 300, easing = HaMotionAccelerate)
+        )
