@@ -142,44 +142,12 @@ fun PremiumSubscriptionScreen(
                         .fillMaxWidth()
                         .wrapContentHeight()
                 ) {
-                    // Illustration Layer - Matches dynamic content height
-                    Canvas(modifier = Modifier.matchParentSize()) {
-                        drawRect(
-                            brush = Brush.verticalGradient(
-                                0f to HaObsidian,
-                                0.6f to HaSurfaceLow,
-                                1f to HaUmber.copy(alpha = 0.2f)
-                            )
-                        )
-                        drawCircle(
-                            brush = Brush.radialGradient(
-                                colors = listOf(HaGoldMid.copy(alpha = 0.25f), Color.Transparent),
-                                center = Offset(size.width * 0.85f, size.height * 0.4f),
-                                radius = 220.dp.toPx()
-                            ),
-                            radius = 220.dp.toPx(),
-                            center = Offset(size.width * 0.85f, size.height * 0.4f)
-                        )
-                        drawCircle(
-                            color = HaGoldLight,
-                            radius = 28.dp.toPx(),
-                            center = Offset(size.width * 0.85f, size.height * 0.4f)
-                        )
-                        val cityPath = Path().apply {
-                            moveTo(0f, size.height)
-                            lineTo(0f, size.height * 0.9f)
-                            lineTo(size.width * 0.15f, size.height * 0.9f)
-                            lineTo(size.width * 0.15f, size.height * 0.75f)
-                            lineTo(size.width * 0.3f, size.height * 0.75f)
-                            lineTo(size.width * 0.3f, size.height * 0.62f)
-                            lineTo(size.width * 0.5f, size.height * 0.62f)
-                            lineTo(size.width * 0.5f, size.height * 0.88f)
-                            lineTo(size.width, size.height * 0.88f)
-                            lineTo(size.width, size.height)
-                            close()
-                        }
-                        drawPath(cityPath, HaObsidian)
-                    }
+                    // Living 3D sunrise scene (animated, reacts to phone tilt)
+                    PremiumSunriseBackground(
+                        modifier = Modifier.matchParentSize(),
+                        reducedMotion = isReducedMotionEnabled,
+                        fadeTo = MidnightBlue
+                    )
 
                     Column(
                         modifier = Modifier
@@ -197,7 +165,9 @@ fun PremiumSubscriptionScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.WorkspacePremium, null, tint = SoftAmber, modifier = Modifier.size(26.dp))
+                                    Box(modifier = Modifier.size(34.dp).ha3DCoin(HaTone.Gold, elevation = 6.dp), contentAlignment = Alignment.Center) {
+                                        Icon(Icons.Default.WorkspacePremium, null, tint = haToneInk(HaTone.Gold), modifier = Modifier.size(20.dp))
+                                    }
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Text("High Alarm Pro", color = HaIvory, fontWeight = FontWeight.Black, fontSize = 19.sp)
                                 }
@@ -215,16 +185,18 @@ fun PremiumSubscriptionScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 24.dp)
-                                .padding(bottom = 32.dp),
+                                .padding(top = 18.dp, bottom = 96.dp),
                             horizontalAlignment = Alignment.Start
                         ) {
                             // Contextual message if from locked challenge
                             if (isFromLockedChallenge) {
                                 StaggeredItem(index = 1, start = startStaggeredAnimation, isReducedMotion = isReducedMotionEnabled) {
                                     Surface(
-                                        color = SoftAmber.copy(alpha = 0.15f),
-                                        shape = RoundedCornerShape(8.dp),
-                                        modifier = Modifier.padding(bottom = 12.dp)
+                                        color = Color.Transparent,
+                                        shape = RoundedCornerShape(10.dp),
+                                        modifier = Modifier
+                                            .padding(bottom = 12.dp)
+                                            .ha3DPanelDeep(RoundedCornerShape(10.dp), elevation = 8.dp)
                                     ) {
                                         Text(
                                             "Unlock this challenge and more with Pro",
@@ -238,8 +210,8 @@ fun PremiumSubscriptionScreen(
                             }
 
                             StaggeredItem(index = 2, start = startStaggeredAnimation, isReducedMotion = isReducedMotionEnabled) {
-                                Surface(color = SoftAmber.copy(0.12f), shape = RoundedCornerShape(6.dp), border = BorderStroke(1.dp, SoftAmber.copy(0.25f))) {
-                                    Text("RISE • FOCUS • ACHIEVE", color = SoftAmber, fontSize = 9.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), letterSpacing = 2.sp)
+                                Surface(color = Color.Transparent, shape = RoundedCornerShape(8.dp), modifier = Modifier.ha3DGoldFace(RoundedCornerShape(8.dp), elevation = 6.dp)) {
+                                    Text("RISE • FOCUS • ACHIEVE", color = Color(0xFF1A140A), fontSize = 9.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), letterSpacing = 2.sp)
                                 }
                             }
                             
@@ -253,7 +225,7 @@ fun PremiumSubscriptionScreen(
                                     text = "Never Oversleep\nAgain", 
                                     style = TextStyle(
                                         brush = titleBrush, 
-                                        shadow = Shadow(color = SoftAmber.copy(alpha = 0.4f), offset = Offset(0f, 0f), blurRadius = 16f)
+                                        shadow = Shadow(color = Color.Black.copy(alpha = 0.7f), offset = Offset(0f, 4f), blurRadius = 6f)
                                     ), 
                                     fontSize = 34.sp, 
                                     fontWeight = FontWeight.Black, 
