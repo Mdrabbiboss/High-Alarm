@@ -2608,7 +2608,8 @@ fun EditToggleItem(title: String, subtitle: String, icon: ImageVector, checked: 
 
 @Composable
 fun EditTextFieldItem(label: String, value: String, onValueChange: (String) -> Unit) {
-    // Same raised 3D card as Repeat / Ringtone, with the text typed right inside it.
+    // Same size and 3D shape as Repeat / Ringtone, but in deep black with a gold
+    // rim so the one place you type stands apart from the tap-to-open rows.
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     var focused by remember { mutableStateOf(false) }
@@ -2618,12 +2619,12 @@ fun EditTextFieldItem(label: String, value: String, onValueChange: (String) -> U
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp)
-            .ha3DPanel(shape, elevation = 10.dp)
-            .border(1.dp, if (focused) HaGold.copy(alpha = 0.8f) else Color.Transparent, shape)
+            .ha3DPanelDeep(shape, elevation = 10.dp)
+            .border(1.dp, if (focused) HaGold.copy(alpha = 0.85f) else Color.Transparent, shape)
             .clickable(interactionSource = tapSource, indication = null) { focusRequester.requestFocus() }
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+            modifier = Modifier.padding(20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(Icons.AutoMirrored.Filled.Label, contentDescription = null, tint = HaGold, modifier = Modifier.size(24.dp))
@@ -2632,13 +2633,13 @@ fun EditTextFieldItem(label: String, value: String, onValueChange: (String) -> U
                 Text(label, fontWeight = FontWeight.Bold, color = HaIvory, fontSize = 16.sp)
                 Box(modifier = Modifier.padding(top = 2.dp)) {
                     if (value.isEmpty()) {
-                        Text("Add a name, e.g. Gym, Work", fontSize = 12.sp, color = HaMuted, maxLines = 1)
+                        Text("Add a name, e.g. Gym, Work", fontSize = 12.sp, color = HaMuted.copy(alpha = 0.85f), maxLines = 1)
                     }
                     BasicTextField(
                         value = value,
                         onValueChange = onValueChange,
                         singleLine = true,
-                        textStyle = TextStyle(color = SoftAmber, fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
+                        textStyle = TextStyle(color = SoftAmber, fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
                         cursorBrush = SolidColor(HaGold),
                         keyboardOptions = KeyboardOptions(
                             capitalization = KeyboardCapitalization.Sentences,
@@ -2664,7 +2665,12 @@ fun EditTextFieldItem(label: String, value: String, onValueChange: (String) -> U
                     Icon(Icons.Default.Close, contentDescription = "Clear", tint = HaMuted, modifier = Modifier.size(14.dp))
                 }
             } else {
-                Icon(Icons.Default.Edit, contentDescription = null, tint = HaMuted, modifier = Modifier.size(18.dp))
+                Box(
+                    modifier = Modifier.size(28.dp).ha3DOrb(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.Edit, contentDescription = null, tint = HaGold, modifier = Modifier.size(14.dp))
+                }
             }
         }
     }
