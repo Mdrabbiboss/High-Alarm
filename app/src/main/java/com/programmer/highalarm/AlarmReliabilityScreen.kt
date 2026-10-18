@@ -76,11 +76,11 @@ fun AlarmReliabilityScreen(
             TopAppBar(
                 title = { },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = onBack, modifier = Modifier.padding(8.dp).ha3DOrb()) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = HaIvory
+                            tint = HaGoldLight
                         )
                     }
                 },

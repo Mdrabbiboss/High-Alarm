@@ -739,9 +739,7 @@ fun FlowCircularStep(
         Box(
             modifier = Modifier
                 .size(42.dp)
-                .clip(CircleShape)
-                .background(HaIvory.copy(alpha = 0.08f))
-                .border(1.2.dp, HaIvory.copy(alpha = 0.2f), CircleShape),
+                .ha3DOrb(),
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -1504,9 +1502,10 @@ fun OnboardingBottomNav(
                 onClick = onBack,
                 modifier = Modifier
                     .weight(0.35f)
-                    .height(52.dp),
+                    .height(52.dp)
+                    .ha3DPanel(RoundedCornerShape(16.dp), elevation = 8.dp),
                 shape = RoundedCornerShape(16.dp),
-                border = BorderStroke(1.dp, HaIvory.copy(alpha = 0.2f)),
+                border = null,
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = HaIvory
                 )
@@ -1526,10 +1525,11 @@ fun OnboardingBottomNav(
             enabled = buttonEnabled,
             modifier = Modifier
                 .weight(if (currentStep > 1) 0.65f else 1f)
-                .height(52.dp),
+                .height(52.dp)
+                .then(if (buttonEnabled) Modifier.ha3DGoldFace(RoundedCornerShape(16.dp), elevation = 10.dp) else Modifier),
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = SoftAmber,
+                containerColor = Color.Transparent,
                 contentColor = MidnightBlue,
                 disabledContainerColor = SoftAmber.copy(alpha = 0.35f),
                 disabledContentColor = MidnightBlue.copy(alpha = 0.4f)
@@ -1734,9 +1734,10 @@ fun RepeatSelectionModal(
                         onClick = onDismiss,
                         modifier = Modifier
                             .weight(1f)
-                            .height(48.dp),
+                            .height(48.dp)
+                            .ha3DPanel(RoundedCornerShape(16.dp), elevation = 8.dp),
                         shape = RoundedCornerShape(16.dp),
-                        border = BorderStroke(1.dp, HaIvory.copy(alpha = 0.2f)),
+                        border = null,
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = HaIvory
                         )
@@ -1752,10 +1753,11 @@ fun RepeatSelectionModal(
                         onClick = { onConfirm(tempDays) },
                         modifier = Modifier
                             .weight(1f)
-                            .height(48.dp),
+                            .height(48.dp)
+                            .ha3DGoldFace(RoundedCornerShape(16.dp)),
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = SoftAmber,
+                            containerColor = Color.Transparent,
                             contentColor = MidnightBlue
                         )
                     ) {

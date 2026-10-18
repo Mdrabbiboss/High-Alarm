@@ -825,8 +825,8 @@ fun GoodMorningDialog(onDismiss: () -> Unit) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(58.dp)
-                                .shadow(8.dp, RoundedCornerShape(18.dp), ambientColor = SoftAmber.copy(0.3f), spotColor = SoftAmber.copy(0.3f)),
-                            colors = ButtonDefaults.buttonColors(containerColor = SoftAmber),
+                                .ha3DGoldFace(RoundedCornerShape(18.dp), elevation = 12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
                             shape = RoundedCornerShape(18.dp)
                         ) {
                             Text(
@@ -941,20 +941,11 @@ fun AlarmMainScreen(
         ) {
             Surface(
                 shape = RoundedCornerShape(28.dp),
-                color = HaInk,
-                border = BorderStroke(
-                    1.dp,
-                    Brush.verticalGradient(
-                        listOf(
-                            HaGoldPale.copy(alpha = 0.25f),
-                            HaIvory.copy(alpha = 0.05f)
-                        )
-                    )
-                ),
+                color = Color.Transparent,
                 modifier = Modifier
                     .fillMaxWidth(0.92f)
-                    .padding(16.dp),
-                shadowElevation = 16.dp
+                    .padding(16.dp)
+                    .ha3DPanel(RoundedCornerShape(28.dp), gold = true, elevation = 20.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(26.dp),
@@ -963,15 +954,13 @@ fun AlarmMainScreen(
                     Box(
                         modifier = Modifier
                             .size(52.dp)
-                            .clip(CircleShape)
-                            .background(SoftAmber.copy(alpha = 0.15f))
-                            .border(1.dp, SoftAmber.copy(alpha = 0.35f), CircleShape),
+                            .ha3DCoin(HaTone.Gold, elevation = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.VerifiedUser,
                             contentDescription = null,
-                            tint = SoftAmber,
+                            tint = haToneInk(HaTone.Gold),
                             modifier = Modifier.size(26.dp)
                         )
                     }
@@ -1010,9 +999,10 @@ fun AlarmMainScreen(
                             },
                             modifier = Modifier
                                 .weight(1f)
-                                .height(48.dp),
+                                .height(48.dp)
+                                .ha3DPanel(RoundedCornerShape(16.dp), elevation = 8.dp),
                             shape = RoundedCornerShape(16.dp),
-                            border = BorderStroke(1.dp, HaIvory.copy(alpha = 0.2f)),
+                            border = null,
                             colors = ButtonDefaults.outlinedButtonColors(
                                 contentColor = HaIvory
                             )
@@ -1032,10 +1022,11 @@ fun AlarmMainScreen(
                             },
                             modifier = Modifier
                                 .weight(1f)
-                                .height(48.dp),
+                                .height(48.dp)
+                                .ha3DGoldFace(RoundedCornerShape(16.dp)),
                             shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = SoftAmber,
+                                containerColor = Color.Transparent,
                                 contentColor = MidnightBlue
                             )
                         ) {

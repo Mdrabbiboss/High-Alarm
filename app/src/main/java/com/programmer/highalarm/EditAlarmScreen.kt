@@ -463,10 +463,9 @@ fun EditAlarmScreen(
                             },
                             modifier = Modifier
                                 .padding(8.dp)
-                                .clip(CircleShape)
-                                .background(HaIvory.copy(alpha = 0.1f))
+                                .ha3DOrb()
                         ) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = HaIvory)
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = HaGoldLight)
                         }
                     },
                     actions = {
@@ -661,16 +660,21 @@ fun EditAlarmScreen(
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 16.dp),
-                            color = HaGoldMid.copy(alpha = 0.1f),
-                            shape = RoundedCornerShape(16.dp),
-                            border = BorderStroke(1.dp, HaGoldMid.copy(alpha = 0.3f))
+                                .padding(vertical = 16.dp)
+                                .ha3DPanel(RoundedCornerShape(16.dp), gold = true, elevation = 8.dp),
+                            color = Color.Transparent,
+                            shape = RoundedCornerShape(16.dp)
                         ) {
                             Row(
-                                modifier = Modifier.padding(16.dp),
+                                modifier = Modifier.padding(14.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(Icons.Default.Info, contentDescription = null, tint = HaGoldMid, modifier = Modifier.size(20.dp))
+                                Box(
+                                    modifier = Modifier.size(30.dp).ha3DCoin(HaTone.Gold, elevation = 4.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Default.Info, contentDescription = null, tint = haToneInk(HaTone.Gold), modifier = Modifier.size(18.dp))
+                                }
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(
                                     "Free users can long-press premium challenges to preview them.",
@@ -775,10 +779,16 @@ fun EditAlarmScreen(
                                                     viewModel.updateWakeUpCheck(mins) 
                                                 }
                                             },
-                                            modifier = Modifier.width(68.dp).height(48.dp),
+                                            modifier = Modifier
+                                                .padding(vertical = 6.dp)
+                                                .width(68.dp)
+                                                .height(48.dp)
+                                                .then(
+                                                    if (isSelected) Modifier.ha3DGoldFace(RoundedCornerShape(14.dp), elevation = 8.dp)
+                                                    else Modifier.ha3DPanel(RoundedCornerShape(14.dp), elevation = 5.dp)
+                                                ),
                                             shape = RoundedCornerShape(14.dp),
-                                            color = if (isSelected) HaIvory else HaIvory.copy(alpha = 0.05f),
-                                            border = if (isSelected) null else BorderStroke(1.dp, HaIvory.copy(alpha = 0.1f))
+                                            color = Color.Transparent
                                         ) {
                                             Row(
                                                 modifier = Modifier.fillMaxSize(),
@@ -787,7 +797,7 @@ fun EditAlarmScreen(
                                             ) {
                                                 Text(
                                                     label,
-                                                    color = if (isSelected) MidnightBlue else HaIvory,
+                                                    color = if (isSelected) Color(0xFF1A140A) else HaIvory,
                                                     fontWeight = FontWeight.ExtraBold,
                                                     fontSize = 14.sp
                                                 )
@@ -795,7 +805,7 @@ fun EditAlarmScreen(
                                                     Icon(
                                                         Icons.Default.Lock,
                                                         contentDescription = null,
-                                                        tint = if (isSelected) MidnightBlue else HaMuted,
+                                                        tint = if (isSelected) Color(0xFF1A140A) else HaGold.copy(alpha = 0.7f),
                                                         modifier = Modifier.padding(start = 4.dp).size(12.dp)
                                                     )
                                                 }
@@ -1199,8 +1209,16 @@ fun RepeatBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = SurfaceColor,
-        dragHandle = { BottomSheetDefaults.DragHandle(color = HaIvory.copy(alpha = 0.2f)) }
+        containerColor = HaPanel,
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .padding(vertical = 12.dp)
+                    .width(40.dp)
+                    .height(5.dp)
+                    .ha3DInset(CircleShape)
+            )
+        }
     ) {
         Column(
             modifier = Modifier
@@ -1278,14 +1296,7 @@ fun RepeatBottomSheet(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Button(
-                onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth().height(54.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = SoftAmber),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Text("Done", color = MidnightBlue, fontWeight = FontWeight.Black, fontSize = 16.sp)
-            }
+            HaGoldButton(text = "Done", onClick = onDismiss, height = 54.dp)
         }
     }
 }
@@ -1298,8 +1309,10 @@ fun RepeatModeItem(label: String, subtitle: String, isSelected: Boolean, onClick
             .fillMaxWidth()
             .height(64.dp)
             .padding(vertical = 4.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(if (isSelected) HaIvory.copy(alpha = 0.1f) else Color.Transparent)
+            .then(
+                if (isSelected) Modifier.ha3DPanelSelected(RoundedCornerShape(16.dp), elevation = 8.dp)
+                else Modifier.ha3DPanel(RoundedCornerShape(16.dp), elevation = 4.dp)
+            )
             .combinedClickable { onClick() }
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -1399,10 +1412,10 @@ fun WheelPicker(
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(itemHeight),
-            color = HaIvory.copy(alpha = 0.06f),
-            shape = RoundedCornerShape(14.dp),
-            border = BorderStroke(1.dp, SoftAmber.copy(alpha = 0.3f))
+                .height(itemHeight)
+                .ha3DPanel(RoundedCornerShape(14.dp), gold = true, elevation = 10.dp),
+            color = Color.Transparent,
+            shape = RoundedCornerShape(14.dp)
         ) {}
 
         LazyColumn(
@@ -1543,14 +1556,13 @@ fun ChallengeSettingsDialog(
             contentAlignment = Alignment.Center
         ) {
             Surface(
-                modifier = if (challenge !is Challenge.ScanObject) {
+                modifier = (if (challenge !is Challenge.ScanObject) {
                     Modifier.fillMaxWidth(0.95f).wrapContentHeight()
                 } else {
                     Modifier.fillMaxWidth(0.95f).fillMaxHeight(0.92f)
-                },
-                color = Color.Black,
-                shape = RoundedCornerShape(32.dp),
-                border = BorderStroke(1.dp, HaIvory.copy(alpha = 0.1f))
+                }).ha3DPanel(RoundedCornerShape(32.dp), gold = true, elevation = 24.dp),
+                color = Color.Transparent,
+                shape = RoundedCornerShape(32.dp)
             ) {
                 Column(
                     modifier = if (challenge !is Challenge.ScanObject) {
@@ -1566,12 +1578,17 @@ fun ChallengeSettingsDialog(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                            Icon(imageVector = challenge.icon, contentDescription = null, tint = SoftAmber, modifier = Modifier.size(28.dp))
+                            Box(
+                                modifier = Modifier.size(40.dp).ha3DCoin(HaTone.Gold, elevation = 6.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(imageVector = challenge.icon, contentDescription = null, tint = haToneInk(HaTone.Gold), modifier = Modifier.size(22.dp))
+                            }
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(text = "${challenge.name} Settings", fontWeight = FontWeight.Black, color = HaIvory, fontSize = 18.sp, maxLines = 1) 
                         }
-                        IconButton(onClick = onDismiss) {
-                            Icon(Icons.Default.Close, contentDescription = "Close", tint = HaIvory.copy(alpha = 0.4f))
+                        IconButton(onClick = onDismiss, modifier = Modifier.size(40.dp).ha3DOrb()) {
+                            Icon(Icons.Default.Close, contentDescription = "Close", tint = HaIvory.copy(alpha = 0.7f), modifier = Modifier.size(20.dp))
                         }
                     }
                     
@@ -1717,7 +1734,7 @@ fun ChallengeSettingsDialog(
                                     selected = selectedValue == 0, 
                                     onClick = { selectedValue = 0 }, 
                                     label = { Text("Random", fontSize = 14.sp, fontWeight = FontWeight.Bold) }, 
-                                    colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaIvory.copy(alpha = 0.05f), labelColor = HaIvory)
+                                    colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaSurfaceHigh, labelColor = HaIvory)
                                 )
                                 options.forEach { opt -> 
                                     val isSel = selectedValue == opt
@@ -1733,7 +1750,7 @@ fun ChallengeSettingsDialog(
                                                 Text("$opt Taps", fontSize = 13.sp, fontWeight = FontWeight.Bold) 
                                             }
                                         }, 
-                                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaIvory.copy(alpha = 0.05f), labelColor = HaIvory)
+                                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaSurfaceHigh, labelColor = HaIvory)
                                     ) 
                                 }
                             }
@@ -1753,7 +1770,7 @@ fun ChallengeSettingsDialog(
                                             Text("Random", fontSize = 14.sp, fontWeight = FontWeight.Bold) 
                                         }
                                     }, 
-                                    colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaIvory.copy(alpha = 0.05f), labelColor = HaIvory)
+                                    colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaSurfaceHigh, labelColor = HaIvory)
                                 )
                                 options.forEach { opt -> 
                                     val isSel = selectedValue == opt
@@ -1769,7 +1786,7 @@ fun ChallengeSettingsDialog(
                                                 Text("$opt Time", fontSize = 14.sp, fontWeight = FontWeight.Bold) 
                                             }
                                         }, 
-                                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaIvory.copy(alpha = 0.05f), labelColor = HaIvory)
+                                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaSurfaceHigh, labelColor = HaIvory)
                                     ) 
                                 }
                             }
@@ -2047,7 +2064,7 @@ fun ChallengeSettingsDialog(
                                                 }
                                             }, 
                                             modifier = Modifier.weight(1f).height(48.dp), 
-                                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaIvory.copy(alpha = 0.05f), labelColor = HaIvory)
+                                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaSurfaceHigh, labelColor = HaIvory)
                                         ) 
                                     }
                                 }
@@ -2151,7 +2168,7 @@ fun ChallengeSettingsDialog(
                                                 }
                                             }, 
                                             modifier = Modifier.weight(1f).height(48.dp), 
-                                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaIvory.copy(alpha = 0.05f), labelColor = HaIvory)
+                                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaSurfaceHigh, labelColor = HaIvory)
                                         ) 
                                     }
                                 }
@@ -2448,7 +2465,7 @@ fun ChallengeSettingsDialog(
                                                 }
                                             }, 
                                             modifier = Modifier.weight(1f).height(48.dp), 
-                                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaIvory.copy(alpha = 0.05f), labelColor = HaIvory)
+                                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaSurfaceHigh, labelColor = HaIvory)
                                         ) 
                                     }
                                 }
@@ -2507,19 +2524,16 @@ fun ChallengeSettingsDialog(
 
                     Button(
                         onClick = { onPreview(challenge, selectedValue, selectedDifficulty, selectedExtra) },
-                        modifier = Modifier.fillMaxWidth().height(52.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = HaIvory.copy(alpha = 0.08f)),
-                        shape = RoundedCornerShape(16.dp),
-                        border = BorderStroke(1.dp, HaIvory.copy(alpha = 0.1f))
+                        modifier = Modifier.fillMaxWidth().height(52.dp).ha3DPanel(RoundedCornerShape(16.dp), elevation = 8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                        shape = RoundedCornerShape(16.dp)
                     ) {
                         Icon(Icons.Default.PlayArrow, contentDescription = null, tint = SoftAmber, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Preview Alarm", color = HaIvory, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                     }
                     Spacer(modifier = Modifier.height(12.dp))
-                    Button(onClick = { onConfirm(selectedValue, selectedDifficulty, selectedExtra) }, modifier = Modifier.fillMaxWidth().height(56.dp), colors = ButtonDefaults.buttonColors(containerColor = SoftAmber), shape = RoundedCornerShape(16.dp)) {
-                        Text("Done", color = MidnightBlue, fontWeight = FontWeight.Black, fontSize = 16.sp)
-                    }
+                    HaGoldButton(text = "Done", onClick = { onConfirm(selectedValue, selectedDifficulty, selectedExtra) })
                 }
             }
         }
@@ -2580,11 +2594,14 @@ fun EditTextFieldItem(label: String, value: String, onValueChange: (String) -> U
         value = value,
         onValueChange = onValueChange,
         label = { Text(label, color = HaMuted) },
-        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+            .ha3DInset(RoundedCornerShape(16.dp)),
         shape = RoundedCornerShape(16.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = SoftAmber,
-            unfocusedBorderColor = HaIvory.copy(alpha = 0.1f),
+            unfocusedBorderColor = Color.Transparent,
             focusedTextColor = HaIvory,
             unfocusedTextColor = HaIvory
         )
@@ -2656,12 +2673,9 @@ fun ChallengeItem(
                 scaleX = scale
                 scaleY = scale
             }
-            .clip(RoundedCornerShape(20.dp))
-            .background(cardBackground)
-            .border(
-                width = if (isPremium && !isSelected) 1.2.dp else 1.5.dp,
-                color = borderColor,
-                shape = RoundedCornerShape(20.dp)
+            .then(
+                if (isSelected || isTapped) Modifier.ha3DPanelSelected(RoundedCornerShape(20.dp))
+                else Modifier.ha3DPanel(RoundedCornerShape(20.dp), gold = isPremium, elevation = 8.dp)
             )
             .combinedClickable(
                 onClick = onClick,
@@ -2700,12 +2714,18 @@ fun ChallengeItem(
                     else -> goldTone
                 }
 
+                // raised 3D orb that holds the icon
+                Box(
+                    modifier = Modifier
+                        .size(46.dp)
+                        .ha3DOrb()
+                )
                 Icon(
                     imageVector = challenge.icon,
                     contentDescription = challenge.name,
                     tint = HaIvory,
                     modifier = Modifier
-                        .size(28.dp)
+                        .size(24.dp)
                         .graphicsLayer(alpha = 0.99f)
                         .drawWithCache {
                             val radialBrush = Brush.radialGradient(
@@ -2770,10 +2790,9 @@ fun ChallengeItem(
                             scaleX = lockPulseScale
                             scaleY = lockPulseScale
                         }
-                        ,
-                    color = Color.Black.copy(alpha = 0.4f),
-                    shape = RoundedCornerShape(cornerRadius),
-                    border = BorderStroke(1.dp, SoftAmber.copy(alpha = 0.6f))
+                        .ha3DCoin(HaTone.Gold, elevation = 4.dp),
+                    color = Color.Transparent,
+                    shape = CircleShape
                 ) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -2782,7 +2801,7 @@ fun ChallengeItem(
                         Icon(
                             imageVector = Icons.Default.Lock,
                             contentDescription = null,
-                            tint = SoftAmber,
+                            tint = haToneInk(HaTone.Gold),
                             modifier = Modifier.size(iconSize)
                         )
                     }
@@ -2861,9 +2880,17 @@ fun InfoBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = SurfaceColor,
-        dragHandle = { BottomSheetDefaults.DragHandle(color = HaIvory.copy(alpha = 0.2f)) },
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        containerColor = HaPanel,
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .padding(vertical = 12.dp)
+                    .width(40.dp)
+                    .height(5.dp)
+                    .ha3DInset(CircleShape)
+            )
+        },
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     ) {
         Column(
             modifier = Modifier
@@ -2875,15 +2902,15 @@ fun InfoBottomSheet(
         ) {
             Box(
                 modifier = Modifier
-                    .size(56.dp)
-                    .background(SoftAmber.copy(alpha = 0.1f), CircleShape),
+                    .size(60.dp)
+                    .ha3DCoin(HaTone.Gold, elevation = 12.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Info,
                     contentDescription = null,
-                    tint = SoftAmber,
-                    modifier = Modifier.size(28.dp)
+                    tint = haToneInk(HaTone.Gold),
+                    modifier = Modifier.size(30.dp)
                 )
             }
             Spacer(modifier = Modifier.height(20.dp))
@@ -2906,9 +2933,9 @@ fun InfoBottomSheet(
             if (content.note != null) {
                 Spacer(modifier = Modifier.height(24.dp))
                 Surface(
-                    color = HaIvory.copy(alpha = 0.05f),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, HaIvory.copy(alpha = 0.1f))
+                    modifier = Modifier.ha3DPanel(RoundedCornerShape(12.dp), gold = true, elevation = 6.dp),
+                    color = Color.Transparent,
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
                         text = content.note,
@@ -2921,31 +2948,33 @@ fun InfoBottomSheet(
                 }
             }
             Spacer(modifier = Modifier.height(32.dp))
-            Button(
-                onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = SoftAmber),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Text("Got it", color = MidnightBlue, fontWeight = FontWeight.Black, fontSize = 16.sp)
-            }
+            HaGoldButton(text = "Got it", onClick = onDismiss)
         }
     }
 }
+
+private data class WakeStep(
+    val icon: ImageVector,
+    val title: String,
+    val desc: String,
+    val tone: HaTone,
+    val motion: Int // 0 = ring/wobble, 1 = pop, 2 = countdown, 3 = drop-in
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WakeUpTutorialBottomSheet(onDismiss: () -> Unit) {
     val sheetState = rememberModalBottomSheetState()
-    
+
+    // Colour follows meaning: gold = alarm/notification, jade = success, steel = waiting, coral = missed
     val steps = remember {
         listOf(
-            Triple(Icons.Default.NotificationsActive, "Alarm Rings", "Your set alarm goes off."),
-            Triple(Icons.Default.CheckCircle, "You dismiss it", "You complete your wake challenge."),
-            Triple(Icons.Default.Timer, "Delay minutes pass...", "The verification timer starts counting down."),
-            Triple(Icons.Default.Notifications, "Notification: Tap to confirm!", "A follow-up check appears at the top."),
-            Triple(Icons.Default.VerifiedUser, "Tap within 5 min -- Confirmed!", "You're verified awake. Well done!"),
-            Triple(Icons.Default.PriorityHigh, "Didn't tap? Alarm rings again!", "Missed the check? Time to wake up (again)!")
+            WakeStep(Icons.Default.NotificationsActive, "Alarm Rings", "Your set alarm goes off.", HaTone.Gold, 0),
+            WakeStep(Icons.Default.CheckCircle, "You dismiss it", "You complete your wake challenge.", HaTone.Jade, 1),
+            WakeStep(Icons.Default.Timer, "Delay minutes pass...", "The verification timer starts counting down.", HaTone.Steel, 2),
+            WakeStep(Icons.Default.Notifications, "Notification: Tap to confirm!", "A follow-up check appears at the top.", HaTone.Gold, 3),
+            WakeStep(Icons.Default.VerifiedUser, "Tap within 5 min -- Confirmed!", "You're verified awake. Well done!", HaTone.Jade, 1),
+            WakeStep(Icons.Default.PriorityHigh, "Didn't tap? Alarm rings again!", "Missed the check? Time to wake up (again)!", HaTone.Coral, 0)
         )
     }
 
@@ -2953,7 +2982,7 @@ fun WakeUpTutorialBottomSheet(onDismiss: () -> Unit) {
 
     LaunchedEffect(Unit) {
         while (true) {
-            delay(2500.milliseconds)
+            delay(2800.milliseconds)
             currentStep = (currentStep + 1) % steps.size
         }
     }
@@ -2961,9 +2990,17 @@ fun WakeUpTutorialBottomSheet(onDismiss: () -> Unit) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = SurfaceColor,
-        dragHandle = { BottomSheetDefaults.DragHandle(color = HaIvory.copy(alpha = 0.2f)) },
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        containerColor = HaPanel,
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .padding(vertical = 12.dp)
+                    .width(40.dp)
+                    .height(5.dp)
+                    .ha3DInset(CircleShape)
+            )
+        },
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     ) {
         Column(
             modifier = Modifier
@@ -2980,9 +3017,9 @@ fun WakeUpTutorialBottomSheet(onDismiss: () -> Unit) {
                 fontWeight = FontWeight.Black,
                 textAlign = TextAlign.Center
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Text(
                 "After dismissing the alarm, tap the follow-up notification. If you don't respond within 5 minutes, the alarm rings again!",
                 color = HaIvory.copy(alpha = 0.6f),
@@ -2992,77 +3029,145 @@ fun WakeUpTutorialBottomSheet(onDismiss: () -> Unit) {
                 modifier = Modifier.padding(horizontal = 8.dp)
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(28.dp))
 
-            // Animated Sequence Area
+            // Recessed 3D stage
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(HaIvory.copy(alpha = 0.03f))
-                    .border(1.dp, HaIvory.copy(alpha = 0.05f), RoundedCornerShape(24.dp)),
+                    .height(210.dp)
+                    .ha3DInset(RoundedCornerShape(26.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 AnimatedContent(
                     targetState = currentStep,
                     transitionSpec = {
-                        (fadeIn(animationSpec = tween(500, easing = LinearOutSlowInEasing)) + 
-                         slideInVertically { height -> height / 2 })
-                        .togetherWith(fadeOut(animationSpec = tween(400)) + 
-                                      slideOutVertically { height -> -height / 2 })
+                        (fadeIn(animationSpec = tween(450, easing = LinearOutSlowInEasing)) +
+                         slideInVertically { height -> height / 3 })
+                        .togetherWith(fadeOut(animationSpec = tween(300)) +
+                                      slideOutVertically { height -> -height / 3 })
                     },
                     label = "tutorial_step"
                 ) { stepIdx ->
-                    val (icon, title, desc) = steps[stepIdx]
+                    val step = steps[stepIdx]
+                    val motion = rememberInfiniteTransition(label = "step_motion")
+                    val wobble by motion.animateFloat(
+                        initialValue = -14f, targetValue = 14f,
+                        animationSpec = infiniteRepeatable(tween(110), RepeatMode.Reverse),
+                        label = "wobble"
+                    )
+                    val pulse by motion.animateFloat(
+                        initialValue = 1f, targetValue = 1.08f,
+                        animationSpec = infiniteRepeatable(tween(700, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+                        label = "pulse"
+                    )
+                    val countdown by motion.animateFloat(
+                        initialValue = 1f, targetValue = 0f,
+                        animationSpec = infiniteRepeatable(tween(2600, easing = androidx.compose.animation.core.LinearEasing), RepeatMode.Restart),
+                        label = "countdown"
+                    )
+                    val drop by motion.animateFloat(
+                        initialValue = 0f, targetValue = 1f,
+                        animationSpec = infiniteRepeatable(tween(1300, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+                        label = "drop"
+                    )
+
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(24.dp)
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
                     ) {
                         Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .background(SoftAmber.copy(alpha = 0.1f), CircleShape),
+                            modifier = Modifier.size(96.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(icon, null, tint = SoftAmber, modifier = Modifier.size(24.dp))
+                            if (step.motion == 2) {
+                                // countdown ring cut into the stage around the coin
+                                androidx.compose.foundation.Canvas(modifier = Modifier.size(96.dp)) {
+                                    val sw = 5.dp.toPx()
+                                    drawArc(
+                                        color = Color.Black.copy(alpha = 0.6f),
+                                        startAngle = 0f, sweepAngle = 360f, useCenter = false,
+                                        topLeft = Offset(sw / 2, sw / 2),
+                                        size = androidx.compose.ui.geometry.Size(size.width - sw, size.height - sw),
+                                        style = androidx.compose.ui.graphics.drawscope.Stroke(sw)
+                                    )
+                                    drawArc(
+                                        brush = Brush.verticalGradient(listOf(HaGoldPale, HaGold, HaGoldDeep)),
+                                        startAngle = -90f, sweepAngle = 360f * countdown, useCenter = false,
+                                        topLeft = Offset(sw / 2, sw / 2),
+                                        size = androidx.compose.ui.geometry.Size(size.width - sw, size.height - sw),
+                                        style = androidx.compose.ui.graphics.drawscope.Stroke(sw, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                                    )
+                                }
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .size(68.dp)
+                                    .graphicsLayer {
+                                        when (step.motion) {
+                                            0 -> rotationZ = wobble
+                                            1 -> { scaleX = pulse; scaleY = pulse }
+                                            3 -> translationY = -10.dp.toPx() * (1f - drop)
+                                        }
+                                    }
+                                    .ha3DCoin(step.tone, elevation = 14.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(step.icon, null, tint = haToneInk(step.tone), modifier = Modifier.size(32.dp))
+                            }
                         }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(title, color = HaIvory, fontWeight = FontWeight.Black, fontSize = 16.sp)
-                        Text(desc, color = HaMuted, fontSize = 12.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Text(step.title, color = HaIvory, fontWeight = FontWeight.Black, fontSize = 16.sp, textAlign = TextAlign.Center)
+                        Text(step.desc, color = HaMuted, fontSize = 12.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp))
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Progress dots
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                steps.indices.forEach { index ->
-                    val isSelected = index == currentStep
-                    val width by animateDpAsState(if (isSelected) 16.dp else 6.dp, label = "dot_width")
-                    val alpha by animateFloatAsState(if (isSelected) 1f else 0.3f, label = "dot_alpha")
-                    
-                    Box(
-                        modifier = Modifier
-                            .height(6.dp)
-                            .width(width)
-                            .clip(CircleShape)
-                            .background(SoftAmber.copy(alpha = alpha))
-                    )
+            Spacer(modifier = Modifier.height(22.dp))
+
+            // 3D step track: finished steps are lit in their own colour, the
+            // current step is a raised coin, upcoming steps sit recessed.
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.82f)
+                        .height(6.dp)
+                        .ha3DInset(CircleShape)
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(0.9f),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    steps.forEachIndexed { index, step ->
+                        val isCurrent = index == currentStep
+                        val isDone = index < currentStep
+                        val nodeSize by animateDpAsState(if (isCurrent) 26.dp else 16.dp, label = "node_size")
+                        Box(
+                            modifier = Modifier
+                                .size(nodeSize)
+                                .then(
+                                    when {
+                                        isCurrent || isDone -> Modifier.ha3DCoin(step.tone, elevation = if (isCurrent) 8.dp else 3.dp)
+                                        else -> Modifier.ha3DInset(CircleShape)
+                                    }
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isCurrent) {
+                                Icon(step.icon, null, tint = haToneInk(step.tone), modifier = Modifier.size(14.dp))
+                            }
+                        }
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(36.dp))
 
-            Button(
-                onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = SoftAmber),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Text("Got it", color = MidnightBlue, fontWeight = FontWeight.Black, fontSize = 16.sp)
-            }
+            HaGoldButton(text = "Got it", onClick = onDismiss)
         }
     }
 }

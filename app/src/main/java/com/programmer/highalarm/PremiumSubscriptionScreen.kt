@@ -203,7 +203,7 @@ fun PremiumSubscriptionScreen(
                                 }
                                 IconButton(
                                     onClick = onBack,
-                                    modifier = Modifier.clip(CircleShape).background(HaIvory.copy(alpha = 0.1f)).size(36.dp)
+                                    modifier = Modifier.size(36.dp).ha3DOrb()
                                 ) {
                                     Icon(Icons.Default.Close, null, tint = HaIvory, modifier = Modifier.size(20.dp))
                                 }

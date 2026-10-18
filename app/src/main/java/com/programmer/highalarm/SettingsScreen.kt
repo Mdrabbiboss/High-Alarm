@@ -227,10 +227,9 @@ fun SettingsScreen(
                             onClick = onBack,
                             modifier = Modifier
                                 .padding(8.dp)
-                                .clip(CircleShape)
-                                .background(HaIvory.copy(alpha = 0.1f))
+                                .ha3DOrb()
                         ) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = HaIvory)
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = HaGoldLight)
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
@@ -625,9 +624,8 @@ fun PrivacyPolicyDialog(
                         IconButton(
                             onClick = onDismiss,
                             modifier = Modifier
-                                .clip(CircleShape)
-                                .background(HaIvory.copy(alpha = 0.1f))
                                 .size(36.dp)
+                                .ha3DOrb()
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -858,9 +856,10 @@ fun DisableFadeInDialog(
                         onClick = onDismiss,
                         modifier = Modifier
                             .weight(1f)
-                            .height(48.dp),
+                            .height(48.dp)
+                            .ha3DPanel(RoundedCornerShape(24.dp), elevation = 8.dp),
                         shape = RoundedCornerShape(24.dp),
-                        border = BorderStroke(1.dp, HaMuted.copy(alpha = 0.5f)),
+                        border = null,
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = HaIvory
                         )
@@ -876,10 +875,11 @@ fun DisableFadeInDialog(
                         onClick = onDisable,
                         modifier = Modifier
                             .weight(1f)
-                            .height(48.dp),
+                            .height(48.dp)
+                            .ha3DGoldFace(RoundedCornerShape(24.dp)),
                         shape = RoundedCornerShape(24.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = SoftAmber,
+                            containerColor = Color.Transparent,
                             contentColor = MidnightBlue
                         )
                     ) {
