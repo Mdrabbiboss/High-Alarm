@@ -2617,7 +2617,7 @@ fun PushUpChallengeView(targetReps: Int, onComplete: () -> Unit) {
 
         RepCameraChrome(
             title = "PUSH-UP CHALLENGE",
-            icon = Icons.Default.FitnessCenter,
+            icon = PushUpIcon,
             onFlip = {
                 counter.reset(keepReps = true)
                 overlay = null
@@ -2702,7 +2702,7 @@ fun SquatCameraChallengeView(targetReps: Int, onComplete: () -> Unit) {
 
         RepCameraChrome(
             title = "SQUAT CHALLENGE",
-            icon = Icons.AutoMirrored.Filled.DirectionsWalk,
+            icon = SquatIcon,
             onFlip = {
                 counter.reset(keepReps = true)
                 overlay = null
@@ -2881,7 +2881,7 @@ fun SquatMotionChallengeView(targetReps: Int, onComplete: () -> Unit) {
                 .navigationBarsPadding()
                 .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
-            RepTitlePill("SQUAT CHALLENGE", Icons.AutoMirrored.Filled.DirectionsWalk)
+            RepTitlePill("SQUAT CHALLENGE", SquatIcon)
             Spacer(modifier = Modifier.weight(1f))
             RepDashboard(
                 reps = reps, target = target, stage = shownStage, depth = if (isGripLocked) depth else 0f,
