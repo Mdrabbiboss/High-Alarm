@@ -254,12 +254,6 @@ fun RandomObjectPicker(pool: List<String>, onPicked: (String) -> Unit) {
                         scaleX = if (isLanding) 1.1f else pulseScale
                         scaleY = if (isLanding) 1.1f else pulseScale
                     }
-                    .shadow(
-                        elevation = if (isLanding) 30.dp else 0.dp,
-                        shape = RoundedCornerShape(32.dp),
-                        ambientColor = animatedAccentColor,
-                        spotColor = animatedAccentColor
-                    )
                     .clip(RoundedCornerShape(32.dp))
                     .background(HaIvory.copy(alpha = 0.05f))
                     .border(
@@ -1024,7 +1018,6 @@ fun TapChallengeView(targetCount: Int, onComplete: () -> Unit) {
                         scaleX = scale.value
                         scaleY = scale.value
                     }
-                    .shadow(15.dp, CircleShape, ambientColor = SoftAmber, spotColor = SoftAmber)
                     .clip(CircleShape)
                     .background(
                         Brush.radialGradient(
@@ -2142,12 +2135,7 @@ fun SlidingPuzzleGame(difficulty: Int, onComplete: () -> Unit) {
                             .size(cellSize)
                             .offset(x = animX, y = animY)
                             .padding(4.dp)
-                            .shadow(
-                                elevation = 8.dp,
-                                shape = RoundedCornerShape(16.dp),
-                                ambientColor = Color.Black.copy(alpha = 0.5f),
-                                spotColor = Color.Black.copy(alpha = 0.5f)
-                            ),
+                            ,
                         shape = RoundedCornerShape(16.dp),
                         color = HaIvory.copy(alpha = 0.06f),
                         border = BorderStroke(1.dp, SoftAmber.copy(alpha = 0.4f))

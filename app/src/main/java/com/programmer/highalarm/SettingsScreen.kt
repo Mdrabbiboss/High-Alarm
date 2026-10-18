@@ -714,12 +714,7 @@ fun AlarmReliabilityCard(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(
-                elevation = 8.dp,
-                shape = RoundedCornerShape(20.dp),
-                ambientColor = SoftAmber.copy(alpha = 0.2f),
-                spotColor = SoftAmber.copy(alpha = 0.4f)
-            ),
+            ,
         shape = RoundedCornerShape(20.dp),
         color = Color.Transparent,
         border = BorderStroke(
@@ -1217,12 +1212,7 @@ fun PremiumUpgradeCard(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(
-                elevation = 20.dp,
-                shape = RoundedCornerShape(28.dp),
-                ambientColor = SoftAmber.copy(alpha = 0.35f),
-                spotColor = SoftAmber.copy(alpha = 0.35f)
-            ),
+            ,
         shape = RoundedCornerShape(28.dp),
         color = if (isPremium) SoftAmber.copy(alpha = 0.12f) else HaSurfaceLow,
         border = BorderStroke(

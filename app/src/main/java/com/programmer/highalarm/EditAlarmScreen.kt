@@ -2727,7 +2727,6 @@ fun ChallengeItem(
                                 drawRect(brush = radialBrush, blendMode = BlendMode.SrcIn)
                             }
                         }
-                        .shadow(12.dp, CircleShape, ambientColor = iconColorPalette[1].copy(alpha = 0.5f), spotColor = iconColorPalette[0].copy(alpha = 0.6f))
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
@@ -2780,12 +2779,7 @@ fun ChallengeItem(
                             scaleX = lockPulseScale
                             scaleY = lockPulseScale
                         }
-                        .shadow(
-                            elevation = (3 * lockPulseAlpha).dp,
-                            shape = RoundedCornerShape(cornerRadius),
-                            ambientColor = SoftAmber.copy(alpha = 0.4f),
-                            spotColor = SoftAmber.copy(alpha = 0.4f)
-                        ),
+                        ,
                     color = Color.Black.copy(alpha = 0.4f),
                     shape = RoundedCornerShape(cornerRadius),
                     border = BorderStroke(1.dp, SoftAmber.copy(alpha = 0.6f))

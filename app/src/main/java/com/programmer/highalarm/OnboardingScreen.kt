@@ -739,7 +739,6 @@ fun FlowCircularStep(
         Box(
             modifier = Modifier
                 .size(42.dp)
-                .shadow(6.dp, CircleShape, ambientColor = iconTint.copy(alpha = 0.3f), spotColor = iconTint.copy(alpha = 0.3f))
                 .clip(CircleShape)
                 .background(HaIvory.copy(alpha = 0.08f))
                 .border(1.2.dp, HaIvory.copy(alpha = 0.2f), CircleShape),
@@ -1367,18 +1366,12 @@ fun Step5SummaryContent(
                     scaleY = iconScale
                     alpha = iconProgress
                 }
-                .shadow(
-                    elevation = 16.dp,
-                    shape = CircleShape,
-                    ambientColor = HaJade.copy(alpha = 0.6f),
-                    spotColor = HaJade.copy(alpha = 0.6f)
-                )
                 .clip(CircleShape)
                 .background(
                     Brush.radialGradient(
                         colors = listOf(
-                            HaJade.copy(alpha = 0.3f),
-                            HaJade.copy(alpha = 0.12f)
+                            Color(0xFF173A2C),
+                            Color(0xFF0F2119)
                         )
                     )
                 )
