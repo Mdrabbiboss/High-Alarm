@@ -50,7 +50,7 @@ jobs:
       - name: Build debug APK, release APK and release AAB
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon assembleDebug assembleRelease bundleRelease \
+          ./gradlew --no-daemon testDebugUnitTest assembleDebug assembleRelease bundleRelease \
             -PMYAPP_RELEASE_STORE_FILE="$SIGN_FILE" \
             -PMYAPP_RELEASE_STORE_PASSWORD="$SIGN_STORE_PW" \
             -PMYAPP_RELEASE_KEY_ALIAS="$SIGN_ALIAS" \

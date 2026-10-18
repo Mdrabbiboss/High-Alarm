@@ -96,6 +96,7 @@ import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.atan2
+import kotlin.math.max
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
@@ -2449,186 +2450,436 @@ fun ObjectChallengeView(mode: Int, extra: String, onComplete: () -> Unit) {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Push-up challenge (ML Kit Pose Detection + PushUpCounter)
+// ---------------------------------------------------------------------------
+
+private val PUSHUP_LANDMARKS = intArrayOf(
+    PoseLandmark.NOSE,
+    PoseLandmark.LEFT_SHOULDER, PoseLandmark.RIGHT_SHOULDER,
+    PoseLandmark.LEFT_ELBOW, PoseLandmark.RIGHT_ELBOW,
+    PoseLandmark.LEFT_WRIST, PoseLandmark.RIGHT_WRIST,
+    PoseLandmark.LEFT_HIP, PoseLandmark.RIGHT_HIP,
+    PoseLandmark.LEFT_KNEE, PoseLandmark.RIGHT_KNEE,
+    PoseLandmark.LEFT_ANKLE, PoseLandmark.RIGHT_ANKLE
+)
+
+private val PUSHUP_ARM_BONES = listOf(
+    PoseLandmark.LEFT_SHOULDER to PoseLandmark.LEFT_ELBOW,
+    PoseLandmark.LEFT_ELBOW to PoseLandmark.LEFT_WRIST,
+    PoseLandmark.RIGHT_SHOULDER to PoseLandmark.RIGHT_ELBOW,
+    PoseLandmark.RIGHT_ELBOW to PoseLandmark.RIGHT_WRIST
+)
+
+private val PUSHUP_BODY_BONES = listOf(
+    PoseLandmark.LEFT_SHOULDER to PoseLandmark.RIGHT_SHOULDER,
+    PoseLandmark.LEFT_SHOULDER to PoseLandmark.LEFT_HIP,
+    PoseLandmark.RIGHT_SHOULDER to PoseLandmark.RIGHT_HIP,
+    PoseLandmark.LEFT_HIP to PoseLandmark.RIGHT_HIP,
+    PoseLandmark.LEFT_HIP to PoseLandmark.LEFT_KNEE,
+    PoseLandmark.RIGHT_HIP to PoseLandmark.RIGHT_KNEE,
+    PoseLandmark.LEFT_KNEE to PoseLandmark.LEFT_ANKLE,
+    PoseLandmark.RIGHT_KNEE to PoseLandmark.RIGHT_ANKLE
+)
+
+/** Landmarks of one frame in upright-image pixels, for drawing the skeleton. */
+private data class PoseOverlayFrame(
+    val points: Map<Int, PushUpCounter.Point>,
+    val imageWidth: Int,
+    val imageHeight: Int,
+    val mirrored: Boolean
+)
+
+private fun Pose.landmarkPoint(type: Int): PushUpCounter.Point? =
+    getPoseLandmark(type)?.let { PushUpCounter.Point(it.position.x, it.position.y, it.inFrameLikelihood) }
+
+private fun Pose.toPushUpBody() = PushUpCounter.Body(
+    nose = landmarkPoint(PoseLandmark.NOSE),
+    leftShoulder = landmarkPoint(PoseLandmark.LEFT_SHOULDER), rightShoulder = landmarkPoint(PoseLandmark.RIGHT_SHOULDER),
+    leftElbow = landmarkPoint(PoseLandmark.LEFT_ELBOW), rightElbow = landmarkPoint(PoseLandmark.RIGHT_ELBOW),
+    leftWrist = landmarkPoint(PoseLandmark.LEFT_WRIST), rightWrist = landmarkPoint(PoseLandmark.RIGHT_WRIST),
+    leftHip = landmarkPoint(PoseLandmark.LEFT_HIP), rightHip = landmarkPoint(PoseLandmark.RIGHT_HIP),
+    leftKnee = landmarkPoint(PoseLandmark.LEFT_KNEE), rightKnee = landmarkPoint(PoseLandmark.RIGHT_KNEE)
+)
+
 @SuppressLint("NewApi")
 @Composable
 fun PushUpChallengeView(targetReps: Int, onComplete: () -> Unit) {
-    var count by remember { mutableIntStateOf(0) }
-    var isDown by remember { mutableStateOf(false) }
-    var isBodyInFrame by remember { mutableStateOf(false) }
+    val target = targetReps.coerceAtLeast(1)
+    val counter = remember { PushUpCounter() }
+    var pushState by remember {
+        mutableStateOf(PushUpCounter.State(0, PushUpCounter.Stage.NO_BODY, 0f, null, false, false))
+    }
+    var overlay by remember { mutableStateOf<PoseOverlayFrame?>(null) }
     var cameraSelector by remember { mutableStateOf(CameraSelector.DEFAULT_FRONT_CAMERA) }
-    
-    // Feedback and animation states
-    val scale = remember { Animatable(1f) }
+    var finished by remember { mutableStateOf(false) }
+    val latestOnComplete by rememberUpdatedState(onComplete)
+
+    val repPop = remember { Animatable(1f) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
         CameraChallenge(
-            onSuccess = { res -> 
+            onSuccess = { res ->
                 val data = res as? PoseFrameData ?: return@CameraChallenge
-                val pose = data.pose
-                
-                // Key landmarks for strict head-to-toe validation
-                // We track both sides but use the side with better visibility (confidence)
-                val nose = pose.getPoseLandmark(PoseLandmark.NOSE)
-                
-                val lShoulder = pose.getPoseLandmark(PoseLandmark.LEFT_SHOULDER)
-                val lElbow = pose.getPoseLandmark(PoseLandmark.LEFT_ELBOW)
-                val lWrist = pose.getPoseLandmark(PoseLandmark.LEFT_WRIST)
-                val lHip = pose.getPoseLandmark(PoseLandmark.LEFT_HIP)
-                val lKnee = pose.getPoseLandmark(PoseLandmark.LEFT_KNEE)
-                val lAnkle = pose.getPoseLandmark(PoseLandmark.LEFT_ANKLE)
+                if (finished) return@CameraChallenge
+                val s = counter.process(data.pose.toPushUpBody(), android.os.SystemClock.elapsedRealtime())
+                pushState = s
 
-                val rShoulder = pose.getPoseLandmark(PoseLandmark.RIGHT_SHOULDER)
-                val rElbow = pose.getPoseLandmark(PoseLandmark.RIGHT_ELBOW)
-                val rWrist = pose.getPoseLandmark(PoseLandmark.RIGHT_WRIST)
-                val rHip = pose.getPoseLandmark(PoseLandmark.RIGHT_HIP)
-                val rKnee = pose.getPoseLandmark(PoseLandmark.RIGHT_KNEE)
-                val rAnkle = pose.getPoseLandmark(PoseLandmark.RIGHT_ANKLE)
-                
-                // 1. Mandatory Head-to-Toe Visibility Check (High Confidence)
-                val minConf = 0.75f
-                
-                val leftVisible = listOf(lShoulder, lElbow, lWrist, lHip, lKnee, lAnkle).all { it != null && it.inFrameLikelihood > minConf }
-                val rightVisible = listOf(rShoulder, rElbow, rWrist, rHip, rKnee, rAnkle).all { it != null && it.inFrameLikelihood > minConf }
-                
-                isBodyInFrame = nose != null && nose.inFrameLikelihood > minConf && (leftVisible || rightVisible)
-                
-                if (isBodyInFrame) {
-                    // Pick the more visible side for angle calculation
-                    val shoulder = if (leftVisible) lShoulder!! else rShoulder!!
-                    val elbow = if (leftVisible) lElbow!! else rElbow!!
-                    val wrist = if (leftVisible) lWrist!! else rWrist!!
-                    val hip = if (leftVisible) lHip!! else rHip!!
-                    val knee = if (leftVisible) lKnee!! else rKnee!!
-                    
-                    // 2. Strict Physical Motion Verification
-                    val armAngle = calculatePoseAngle(shoulder, elbow, wrist)
-                    
-                    // Torso alignment (Shoulder-Hip-Knee) should be relatively straight (Plank)
-                    val torsoAngle = calculatePoseAngle(shoulder, hip, knee)
-                    val isPlankPosture = torsoAngle > 150f 
-                    
-                    // Vertical position check: In push-up (side view), 
-                    // the difference in Y between shoulder and hip shouldn't be extreme (not standing)
-                    val isHorizontal = abs(shoulder.position.y - hip.position.y) < (data.height * 0.35f)
-                    
-                    if (isPlankPosture && isHorizontal) {
-                        // Strict State Machine Rules:
-                        // Descend: Elbow angle must drop below 85 degrees (Deep bend)
-                        // Ascend: Must fully extend arms back to > 165 degrees
-                        if (!isDown && armAngle < 85f) {
-                            isDown = true
-                            VibrationUtils.vibrate(context, longArrayOf(0, 40))
-                        } else if (isDown && armAngle > 165f) {
-                            isDown = false
-                            count++
-                            
-                            VibrationUtils.vibrate(context, longArrayOf(0, 60))
-                            scope.launch {
-                                scale.animateTo(1.25f, tween(150))
-                                scale.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
-                            }
-                            
-                            if (count >= targetReps) onComplete()
+                val rotated = data.rotation == 90 || data.rotation == 270
+                val points = HashMap<Int, PushUpCounter.Point>()
+                for (type in PUSHUP_LANDMARKS) data.pose.landmarkPoint(type)?.let { points[type] = it }
+                overlay = PoseOverlayFrame(
+                    points = points,
+                    imageWidth = if (rotated) data.height else data.width,
+                    imageHeight = if (rotated) data.width else data.height,
+                    mirrored = data.isFront
+                )
+
+                if (s.repJustCounted) {
+                    VibrationUtils.vibrate(context, longArrayOf(0, 60))
+                    scope.launch {
+                        repPop.animateTo(1.18f, tween(120))
+                        repPop.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+                    }
+                    if (s.reps >= target && !finished) {
+                        finished = true
+                        scope.launch {
+                            delay(450.milliseconds)
+                            latestOnComplete()
                         }
                     }
                 }
-            }, 
-            mode = "pose", 
+            },
+            mode = "pose",
             cameraSelector = cameraSelector
         )
 
-        // --- Premium Push-up UI ---
+        // Live skeleton so the user can see exactly what is being tracked
+        PushUpSkeletonOverlay(
+            frame = overlay,
+            atBottom = pushState.stage == PushUpCounter.Stage.BOTTOM,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        // Cinematic vignette for legibility
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(190.dp)
+                .align(Alignment.TopCenter)
+                .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.85f), Color.Transparent)))
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(340.dp)
+                .align(Alignment.BottomCenter)
+                .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.92f))))
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
                 .navigationBarsPadding()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
+                .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
-            // Header Info
-            Surface(
-                color = MidnightBlue.copy(alpha = 0.8f),
-                shape = CircleShape,
-                border = BorderStroke(1.dp, HaIvory.copy(alpha = 0.1f))
+            // ---- Header ----
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "PUSH-UP CHALLENGE",
-                    color = SoftAmber,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Black,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp),
-                    letterSpacing = 2.sp
-                )
-            }
-
-            // Real-time Counter
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.graphicsLayer {
-                    scaleX = scale.value
-                    scaleY = scale.value
-                }
-            ) {
-                Text(
-                    text = "$count",
-                    fontSize = 110.sp,
-                    fontWeight = FontWeight.Black,
-                    color = HaIvory
-                )
-                Text(
-                    text = "OF $targetReps REPS",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = SoftAmber,
-                    letterSpacing = 4.sp
-                )
-            }
-
-            // Status / Guidance Footer
-            Surface(
-                modifier = Modifier.fillMaxWidth().height(80.dp),
-                color = if (isBodyInFrame) (if (isDown) HaJade.copy(0.15f) else MidnightBlue.copy(0.8f)) else HaCoral.copy(0.1f),
-                shape = RoundedCornerShape(24.dp),
-                border = BorderStroke(1.dp, if (isBodyInFrame) (if (isDown) HaJade else HaIvory.copy(0.1f)) else HaCoral.copy(0.5f))
-            ) {
-                Box(contentAlignment = Alignment.Center) {
+                Row(
+                    modifier = Modifier
+                        .ha3DBlack(CircleShape, elevation = 10.dp)
+                        .padding(start = 6.dp, end = 18.dp, top = 6.dp, bottom = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier.size(34.dp).ha3DCoin(HaTone.Gold, elevation = 4.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.FitnessCenter, null, tint = haToneInk(HaTone.Gold), modifier = Modifier.size(18.dp))
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = when {
-                            !isBodyInFrame -> "STEP BACK: BODY NOT VISIBLE"
-                            isDown -> "GOOD! NOW PUSH UP"
-                            else -> "GO DOWN..."
-                        },
-                        color = if (!isBodyInFrame) HaCoral else HaIvory,
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 16.sp
+                        "PUSH-UP CHALLENGE",
+                        color = HaGoldLight,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 1.5.sp
+                    )
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                IconButton(
+                    onClick = {
+                        counter.reset(keepReps = true)
+                        overlay = null
+                        pushState = PushUpCounter.State(pushState.reps, PushUpCounter.Stage.NO_BODY, 0f, null, false, false)
+                        cameraSelector = if (cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA)
+                            CameraSelector.DEFAULT_BACK_CAMERA else CameraSelector.DEFAULT_FRONT_CAMERA
+                    },
+                    modifier = Modifier.size(46.dp).ha3DOrb()
+                ) {
+                    Icon(Icons.Default.FlipCameraAndroid, contentDescription = "Switch Camera", tint = HaGoldLight)
+                }
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            // ---- Placement guide while no body is found ----
+            AnimatedVisibility(
+                visible = pushState.stage == PushUpCounter.Stage.NO_BODY && !finished,
+                enter = fadeIn() + scaleIn(initialScale = 0.95f),
+                exit = fadeOut()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                        .ha3DPanelDeep(RoundedCornerShape(24.dp), elevation = 16.dp)
+                        .padding(18.dp)
+                ) {
+                    Text("Set up your phone", color = HaIvory, fontWeight = FontWeight.Black, fontSize = 16.sp)
+                    Spacer(modifier = Modifier.height(10.dp))
+                    PushUpTipRow(Icons.Default.PhoneAndroid, "Stand the phone on the floor, 1–2 m to your side — best accuracy")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    PushUpTipRow(Icons.Default.Face, "Or lay it in front of your face with the front camera")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    PushUpTipRow(Icons.Default.LightMode, "Good light helps the camera see your arms")
+                }
+            }
+
+            // ---- Dashboard ----
+            PushUpDashboard(
+                state = pushState,
+                target = target,
+                finished = finished,
+                popScale = repPop.value
+            )
+        }
+    }
+}
+
+@Composable
+private fun PushUpTipRow(icon: ImageVector, text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier.size(28.dp).ha3DOrb(),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, null, tint = HaGoldLight, modifier = Modifier.size(15.dp))
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(text, color = HaIvory.copy(alpha = 0.8f), fontSize = 12.sp, lineHeight = 16.sp)
+    }
+}
+
+@Composable
+private fun PushUpDashboard(
+    state: PushUpCounter.State,
+    target: Int,
+    finished: Boolean,
+    popScale: Float
+) {
+    val reps = state.reps.coerceAtMost(target)
+    val progress by animateFloatAsState(reps / target.toFloat(), tween(400), label = "pushup_progress")
+    val depth by animateFloatAsState(state.depth, tween(90), label = "pushup_depth")
+
+    val (tone, title, hint) = when {
+        finished -> Triple(HaTone.Jade, "Challenge complete!", "Great work — you're awake.")
+        state.stage == PushUpCounter.Stage.NO_BODY -> Triple(HaTone.Coral, "Show your arms", "Shoulders, elbows and wrists must be visible.")
+        state.stage == PushUpCounter.Stage.NOT_IN_POSITION -> Triple(HaTone.Coral, "Get into position", "Hands on the floor, body in a straight plank.")
+        state.stage == PushUpCounter.Stage.BOTTOM -> Triple(HaTone.Jade, "Push up!", "Straighten your arms to count the rep.")
+        state.stage == PushUpCounter.Stage.LOWERING -> Triple(HaTone.Gold, "Lower… keep going", "Bend your elbows until the bar turns green.")
+        else -> Triple(HaTone.Gold, "Go down", "Lower your chest toward the floor.")
+    }
+    val statusIcon = when (tone) {
+        HaTone.Jade -> Icons.Default.Check
+        HaTone.Coral -> Icons.Default.PriorityHigh
+        else -> Icons.Default.ArrowDownward
+    }
+    val reachedDepth = depth >= 0.60f
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .ha3DPanelDeep(RoundedCornerShape(30.dp), elevation = 20.dp)
+            .padding(18.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Rep ring
+        Box(
+            modifier = Modifier
+                .size(128.dp)
+                .graphicsLayer { scaleX = popScale; scaleY = popScale },
+            contentAlignment = Alignment.Center
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val sw = 11.dp.toPx()
+                val inset = sw / 2 + 2.dp.toPx()
+                val arcSize = Size(size.width - inset * 2, size.height - inset * 2)
+                val tl = Offset(inset, inset)
+                // recessed groove
+                drawArc(
+                    brush = Brush.verticalGradient(listOf(Color(0xFF050507), Color(0xFF1A1A20))),
+                    startAngle = 0f, sweepAngle = 360f, useCenter = false,
+                    topLeft = tl, size = arcSize, style = Stroke(sw)
+                )
+                // polished progress
+                if (progress > 0f) {
+                    drawArc(
+                        brush = Brush.verticalGradient(
+                            if (finished) listOf(HaJadeLight, HaJade, HaJadeDeep)
+                            else listOf(HaGoldPale, HaGold, HaGoldDeep)
+                        ),
+                        startAngle = -90f, sweepAngle = 360f * progress, useCenter = false,
+                        topLeft = tl, size = arcSize, style = Stroke(sw, cap = StrokeCap.Round)
+                    )
+                }
+            }
+            Box(
+                modifier = Modifier.size(88.dp).ha3DBlack(CircleShape, elevation = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        "${state.reps}",
+                        color = HaIvory,
+                        fontSize = 38.sp,
+                        fontWeight = FontWeight.Black,
+                        lineHeight = 38.sp
+                    )
+                    Text(
+                        "of $target",
+                        color = HaGold,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
                     )
                 }
             }
         }
 
-        // --- Camera Switcher ---
-        IconButton(
-            onClick = {
-                cameraSelector = if (cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA)
-                    CameraSelector.DEFAULT_BACK_CAMERA
-                else
-                    CameraSelector.DEFAULT_FRONT_CAMERA
-            },
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .statusBarsPadding()
-                .padding(16.dp)
-                .size(48.dp)
-                .background(HaIvory.copy(alpha = 0.15f), CircleShape)
-        ) {
-            Icon(
-                imageVector = Icons.Default.FlipCameraAndroid, 
-                contentDescription = "Switch Camera", 
-                tint = HaIvory
+        Spacer(modifier = Modifier.width(18.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier.size(26.dp).ha3DCoin(tone, elevation = 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(statusIcon, null, tint = haToneInk(tone), modifier = Modifier.size(15.dp))
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    title,
+                    color = HaIvory,
+                    fontWeight = FontWeight.Black,
+                    fontSize = 16.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Text(
+                hint,
+                color = HaMuted,
+                fontSize = 11.sp,
+                lineHeight = 14.sp,
+                modifier = Modifier.padding(top = 6.dp)
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Depth gauge: fills as the elbows bend, turns jade once deep enough
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("DEPTH", color = HaMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
+                Spacer(modifier = Modifier.weight(1f))
+                state.elbowAngle?.let {
+                    Text("${it.toInt()}°", color = HaGoldLight, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+            Spacer(modifier = Modifier.height(6.dp))
+            BoxWithConstraints(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(14.dp)
+                    .ha3DInset(CircleShape)
+            ) {
+                val w = maxWidth
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(w * depth.coerceIn(0f, 1f))
+                        .clip(CircleShape)
+                        .background(
+                            Brush.verticalGradient(
+                                if (reachedDepth) listOf(HaJadeLight, HaJade, HaJadeDeep)
+                                else listOf(HaGoldPale, HaGold, HaGoldDeep)
+                            )
+                        )
+                )
+                // target notch
+                Box(
+                    modifier = Modifier
+                        .offset(x = w * 0.60f)
+                        .width(2.dp)
+                        .fillMaxHeight()
+                        .background(HaIvory.copy(alpha = 0.55f))
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PushUpSkeletonOverlay(frame: PoseOverlayFrame?, atBottom: Boolean, modifier: Modifier) {
+    Canvas(modifier = modifier) {
+        val f = frame ?: return@Canvas
+        if (f.imageWidth <= 0 || f.imageHeight <= 0) return@Canvas
+        // PreviewView uses FILL_CENTER: scale to cover, then centre-crop.
+        val scale = max(size.width / f.imageWidth, size.height / f.imageHeight)
+        val dx = (size.width - f.imageWidth * scale) / 2f
+        val dy = (size.height - f.imageHeight * scale) / 2f
+        fun map(p: PushUpCounter.Point): Offset {
+            var x = p.x * scale + dx
+            val y = p.y * scale + dy
+            if (f.mirrored) x = size.width - x
+            return Offset(x, y)
+        }
+        fun ok(type: Int) = f.points[type]?.let { it.likelihood >= PushUpCounter.MIN_LIKELIHOOD } == true
+
+        for ((a, b) in PUSHUP_BODY_BONES) {
+            if (ok(a) && ok(b)) {
+                drawLine(
+                    color = HaIvory.copy(alpha = 0.45f),
+                    start = map(f.points[a]!!), end = map(f.points[b]!!),
+                    strokeWidth = 4.dp.toPx(), cap = StrokeCap.Round
+                )
+            }
+        }
+        val armColor = if (atBottom) HaJade else HaGold
+        for ((a, b) in PUSHUP_ARM_BONES) {
+            if (ok(a) && ok(b)) {
+                val s = map(f.points[a]!!); val e = map(f.points[b]!!)
+                drawLine(color = Color.Black.copy(alpha = 0.5f), start = s, end = e, strokeWidth = 11.dp.toPx(), cap = StrokeCap.Round)
+                drawLine(color = armColor, start = s, end = e, strokeWidth = 7.dp.toPx(), cap = StrokeCap.Round)
+            }
+        }
+        for (type in PUSHUP_LANDMARKS) {
+            if (!ok(type) || type == PoseLandmark.NOSE) continue
+            val c = map(f.points[type]!!)
+            val isElbow = type == PoseLandmark.LEFT_ELBOW || type == PoseLandmark.RIGHT_ELBOW
+            val r = if (isElbow) 9.dp.toPx() else 6.dp.toPx()
+            drawCircle(color = Color.Black.copy(alpha = 0.6f), radius = r + 2.dp.toPx(), center = c)
+            drawCircle(
+                brush = Brush.verticalGradient(
+                    if (isElbow) listOf(HaGoldPale, armColor, HaGoldDeep) else listOf(Color.White, HaIvory, HaMuted),
+                    startY = c.y - r, endY = c.y + r
+                ),
+                radius = r, center = c
             )
         }
     }
