@@ -1444,32 +1444,38 @@ fun NextAlarmSummaryCard(info: NextAlarmInfo) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .shadow(24.dp, cardShape, ambientColor = HaGold.copy(alpha = 0.18f), spotColor = HaGold.copy(alpha = 0.22f))
+            // real drop shadow under a solid (opaque) panel -> lifted, 3D feel
+            .shadow(22.dp, cardShape, ambientColor = Color.Black, spotColor = Color.Black)
             .clip(cardShape)
+            // light comes from straight above: lighter top, darker bottom (symmetric)
             .background(
-                Brush.linearGradient(
-                    listOf(Color(0xFF221C14), Color(0xFF17161B), Color(0xFF111015)),
-                    start = Offset(0f, 0f),
-                    end = Offset(900f, 900f)
+                Brush.verticalGradient(
+                    listOf(Color(0xFF26252D), Color(0xFF1A1A20), Color(0xFF111115))
                 )
             )
+            // bevelled edge: bright top rim, gold mid, dark bottom rim
             .border(
-                1.dp,
-                Brush.linearGradient(
-                    listOf(HaGoldLight.copy(alpha = 0.55f), HaGold.copy(alpha = 0.06f), HaGoldDeep.copy(alpha = 0.35f))
+                1.2.dp,
+                Brush.verticalGradient(
+                    listOf(
+                        HaGoldPale.copy(alpha = 0.55f),
+                        HaGold.copy(alpha = 0.18f),
+                        Color.Black.copy(alpha = 0.7f)
+                    )
                 ),
                 cardShape
             )
     ) {
-        // soft champagne light from the top
+        // glass gloss across the top half (even from left to right)
         Box(
             modifier = Modifier
                 .matchParentSize()
                 .background(
-                    Brush.radialGradient(
-                        listOf(HaGold.copy(alpha = 0.10f), Color.Transparent),
-                        center = Offset(450f, 0f),
-                        radius = 700f
+                    Brush.verticalGradient(
+                        0f to Color.White.copy(alpha = 0.07f),
+                        0.45f to Color.White.copy(alpha = 0.015f),
+                        0.46f to Color.Transparent,
+                        1f to Color.Transparent
                     )
                 )
         )
@@ -1479,16 +1485,20 @@ fun NextAlarmSummaryCard(info: NextAlarmInfo) {
                 .padding(horizontal = 24.dp, vertical = 26.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // 3D gold coin
             Box(
                 modifier = Modifier
-                    .size(52.dp)
+                    .size(54.dp)
+                    .shadow(10.dp, CircleShape, ambientColor = Color.Black, spotColor = Color.Black)
                     .clip(CircleShape)
                     .background(
-                        Brush.radialGradient(listOf(HaGold.copy(alpha = 0.22f), HaGold.copy(alpha = 0.06f)))
+                        Brush.verticalGradient(
+                            listOf(HaGoldPale, HaGoldLight, HaGold, HaGoldMid, HaGoldDeep)
+                        )
                     )
                     .border(
-                        1.dp,
-                        Brush.linearGradient(listOf(HaGoldPale.copy(alpha = 0.8f), HaGoldDeep.copy(alpha = 0.4f))),
+                        1.5.dp,
+                        Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.7f), HaBronze)),
                         CircleShape
                     ),
                 contentAlignment = Alignment.Center
@@ -1496,8 +1506,8 @@ fun NextAlarmSummaryCard(info: NextAlarmInfo) {
                 Icon(
                     Icons.Default.NotificationsActive,
                     contentDescription = null,
-                    tint = HaGoldLight,
-                    modifier = Modifier.size(24.dp)
+                    tint = Color(0xFF2A1F0E),
+                    modifier = Modifier.size(26.dp)
                 )
             }
 
@@ -1505,7 +1515,7 @@ fun NextAlarmSummaryCard(info: NextAlarmInfo) {
 
             Text(
                 text = "Next alarm in ${info.remainingFormatted}",
-                color = HaGoldPale.copy(alpha = 0.7f),
+                color = HaIvory.copy(alpha = 0.62f),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = 0.6.sp
@@ -1518,7 +1528,12 @@ fun NextAlarmSummaryCard(info: NextAlarmInfo) {
                 Text(
                     text = info.time.substringBefore(" "),
                     style = androidx.compose.ui.text.TextStyle(
-                        brush = Brush.verticalGradient(listOf(Color.White, HaIvory, HaGoldPale))
+                        brush = Brush.verticalGradient(listOf(Color.White, HaIvory, Color(0xFFCFCBC4))),
+                        shadow = androidx.compose.ui.graphics.Shadow(
+                            color = Color.Black.copy(alpha = 0.75f),
+                            offset = Offset(0f, 6f),
+                            blurRadius = 14f
+                        )
                     ),
                     fontSize = 54.sp,
                     fontWeight = FontWeight.Black,
@@ -1528,7 +1543,14 @@ fun NextAlarmSummaryCard(info: NextAlarmInfo) {
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = info.time.substringAfter(" "),
-                        style = androidx.compose.ui.text.TextStyle(brush = HaGoldHorizontal),
+                        style = androidx.compose.ui.text.TextStyle(
+                            brush = Brush.verticalGradient(listOf(HaGoldPale, HaGold, HaGoldDeep)),
+                            shadow = androidx.compose.ui.graphics.Shadow(
+                                color = Color.Black.copy(alpha = 0.6f),
+                                offset = Offset(0f, 3f),
+                                blurRadius = 8f
+                            )
+                        ),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 1.sp,
@@ -1654,10 +1676,10 @@ fun AlarmCard(
     val cardShape = remember { RoundedCornerShape(24.dp) }
     val gradientBrush = remember(alarm.isEnabled) {
         if (alarm.isEnabled) {
-            Brush.linearGradient(
-                colors = listOf(HaUmber.copy(alpha = 0.85f), HaSurface.copy(alpha = 0f)),
-                start = Offset(0f, 0f),
-                end = Offset(400f, 400f)
+            Brush.verticalGradient(
+                0f to Color.White.copy(alpha = 0.06f),
+                0.5f to Color.White.copy(alpha = 0.01f),
+                1f to Color.Black.copy(alpha = 0.25f)
             )
         } else null
     }
@@ -1668,17 +1690,20 @@ fun AlarmCard(
             .padding(vertical = 4.dp),
         shape = cardShape,
         color = if (isSelected) SurfaceColor.copy(alpha = 0.95f) else SurfaceColor,
-        shadowElevation = if (isSelected || alarm.isEnabled) 6.dp else 0.dp,
+        shadowElevation = if (isSelected || alarm.isEnabled) 12.dp else 4.dp,
         tonalElevation = if (isSelected) 4.dp else 0.dp,
         border = when {
             isSelected -> BorderStroke(2.dp, HaGold)
             alarm.isEnabled -> BorderStroke(
                 1.dp,
-                Brush.linearGradient(
-                    listOf(HaGoldLight.copy(alpha = 0.55f), HaGold.copy(alpha = 0.08f), HaGoldDeep.copy(alpha = 0.35f))
+                Brush.verticalGradient(
+                    listOf(HaGoldPale.copy(alpha = 0.45f), HaGold.copy(alpha = 0.14f), Color.Black.copy(alpha = 0.6f))
                 )
             )
-            else -> BorderStroke(1.dp, HaIvory.copy(alpha = 0.05f))
+            else -> BorderStroke(
+                1.dp,
+                Brush.verticalGradient(listOf(HaIvory.copy(alpha = 0.12f), Color.Black.copy(alpha = 0.5f)))
+            )
         }
     ) {
         Box(
