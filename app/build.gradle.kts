@@ -25,6 +25,10 @@ android {
         versionName = "4.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+        }
     }
 
     signingConfigs {
@@ -59,16 +63,14 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    // Per-device APKs (only affects APK builds; Play Store AAB is unchanged).
-    // Keeps the test APK small instead of bundling native libs for every CPU.
-    splits {
-        abi {
-            isEnable = true
-            reset()
-            include("arm64-v8a", "armeabi-v7a")
-            isUniversalApk = true
+    // One APK for every real phone (ARM 64/32-bit). Native libraries are
+    // compressed inside the APK so the download is much smaller.
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
         }
     }
+
     buildFeatures {
         compose = true
     }
