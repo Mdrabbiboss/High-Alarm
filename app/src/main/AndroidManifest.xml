@@ -43,6 +43,20 @@
             </intent-filter>
         </activity>
 
+        <!-- Floating voice guide shown over the "Display over other apps" screen -->
+        <activity
+            android:name=".OverlayGuideActivity"
+            android:exported="false"
+            android:supportsPictureInPicture="true"
+            android:resizeableActivity="true"
+            android:launchMode="singleTask"
+            android:taskAffinity="com.programmer.highalarm.guide"
+            android:excludeFromRecents="true"
+            android:autoRemoveFromRecents="true"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"
+            android:theme="@style/Theme.HighAlarm"
+            tools:targetApi="n" />
+
         <receiver android:name=".AlarmReceiver" android:exported="false" />
         <receiver android:name=".WakeUpCheckReceiver" android:exported="false" />
 

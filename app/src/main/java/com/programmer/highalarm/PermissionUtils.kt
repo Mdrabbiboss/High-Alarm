@@ -2,6 +2,7 @@ package com.programmer.highalarm
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
@@ -56,6 +57,16 @@ object PermissionUtils {
 
     fun requestOverlayPermission(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            // Not granted yet: open the settings screen with the floating
+            // brand-specific voice guide on top of it.
+            if (!Settings.canDrawOverlays(context) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+                context.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
+            ) {
+                try {
+                    OverlayGuideActivity.start(context)
+                    return
+                } catch (_: Exception) { /* fall back to the plain settings screen */ }
+            }
             val intent = Intent(
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                 Uri.parse("package:${context.packageName}")

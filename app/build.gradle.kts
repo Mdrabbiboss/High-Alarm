@@ -21,8 +21,8 @@ android {
         applicationId = "com.programmer.highalarm"
         minSdk = 24
         targetSdk = 36
-        versionCode = 33
-        versionName = "4.1"
+        versionCode = 34
+        versionName = "4.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
