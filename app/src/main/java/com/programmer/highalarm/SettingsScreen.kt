@@ -811,7 +811,7 @@ fun DisableFadeInDialog(
             modifier = Modifier
                 .fillMaxWidth(0.9f)
                 .padding(16.dp)
-                .ha3DPanel(RoundedCornerShape(28.dp), gold = true, elevation = 20.dp)
+                .ha3DPanelDeep(RoundedCornerShape(28.dp))
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
@@ -917,7 +917,7 @@ fun VibrationSelectionDialog(
                 .fillMaxWidth(0.9f)
                 .widthIn(max = 400.dp)
                 .heightIn(max = 520.dp)
-                .ha3DPanel(RoundedCornerShape(28.dp), gold = true, elevation = 20.dp)
+                .ha3DPanelDeep(RoundedCornerShape(28.dp))
         ) {
             Column(
                 modifier = Modifier
@@ -926,7 +926,7 @@ fun VibrationSelectionDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(
-                    modifier = Modifier.size(46.dp).clip(CircleShape).background(SoftAmber.copy(alpha = 0.1f)),
+                    modifier = Modifier.size(46.dp).ha3DCoin(HaTone.Gold, elevation = 6.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(Icons.Default.Vibration, contentDescription = null, tint = SoftAmber, modifier = Modifier.size(24.dp))
@@ -948,7 +948,7 @@ fun VibrationSelectionDialog(
                                 VibrationUtils.vibrate(context, pattern.pattern, amplitudes = pattern.amplitudes)
                             }
                         },
-                        color = if (isSelected) SoftAmber.copy(alpha = 0.1f) else Color.Transparent,
+                        color = if (isSelected) HaGoldSelectedFill else Color.Transparent,
                         shape = RoundedCornerShape(14.dp),
                         modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
                         border = if (isSelected) BorderStroke(1.dp, SoftAmber) else null

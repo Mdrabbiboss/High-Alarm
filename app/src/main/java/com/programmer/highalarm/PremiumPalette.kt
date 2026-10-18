@@ -114,3 +114,22 @@ fun Modifier.ha3DGoldCoin(): Modifier = this
         ),
         CircleShape
     )
+
+// ── Deep black 3D (popups, dialogs, sheets) ─────────────────────────────
+val HaPanelDeep = Color(0xFF0F0F13)
+val HaBlackRaised = Color(0xFF15151A)
+val HaGoldSelectedFill = Color(0xFF2E2615)
+
+/** Deep black popup surface: near-black, lit from above, gold bevel, heavy shadow. */
+fun Modifier.ha3DPanelDeep(shape: Shape, elevation: Dp = 24.dp): Modifier = this
+    .shadow(elevation, shape, ambientColor = Color.Black, spotColor = Color.Black)
+    .clip(shape)
+    .background(Brush.verticalGradient(listOf(Color(0xFF17171C), Color(0xFF0E0E12), Color(0xFF08080A))))
+    .border(Ha3DGoldBorder, shape)
+
+/** Small black raised tile used inside black popups. */
+fun Modifier.ha3DBlack(shape: Shape, elevation: Dp = 6.dp): Modifier = this
+    .shadow(elevation, shape, ambientColor = Color.Black, spotColor = Color.Black)
+    .clip(shape)
+    .background(Brush.verticalGradient(listOf(Color(0xFF1D1D23), Color(0xFF131317), Color(0xFF0B0B0E))))
+    .border(Ha3DBorder, shape)

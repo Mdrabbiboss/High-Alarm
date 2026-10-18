@@ -1209,7 +1209,7 @@ fun RepeatBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = HaPanel,
+        containerColor = HaPanelDeep,
         dragHandle = {
             Box(
                 modifier = Modifier
@@ -1560,7 +1560,7 @@ fun ChallengeSettingsDialog(
                     Modifier.fillMaxWidth(0.95f).wrapContentHeight()
                 } else {
                     Modifier.fillMaxWidth(0.95f).fillMaxHeight(0.92f)
-                }).ha3DPanel(RoundedCornerShape(32.dp), gold = true, elevation = 24.dp),
+                }).ha3DPanelDeep(RoundedCornerShape(32.dp), elevation = 28.dp),
                 color = Color.Transparent,
                 shape = RoundedCornerShape(32.dp)
             ) {
@@ -1622,10 +1622,14 @@ fun ChallengeSettingsDialog(
                                     Column {
                                         Surface(
                                             onClick = { selectedDifficulty = index }, 
-                                            modifier = Modifier.fillMaxWidth(), 
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .then(
+                                                    if (isSel) Modifier.ha3DPanelSelected(RoundedCornerShape(16.dp), elevation = 8.dp)
+                                                    else Modifier.ha3DBlack(RoundedCornerShape(16.dp))
+                                                ), 
                                             shape = RoundedCornerShape(16.dp), 
-                                            color = if (isSel) SoftAmber.copy(alpha = 0.15f) else HaIvory.copy(alpha = 0.05f), 
-                                            border = BorderStroke(1.dp, if (isSel) SoftAmber else HaIvory.copy(alpha = 0.1f))
+                                            color = Color.Transparent
                                         ) {
                                             Row(
                                                 modifier = Modifier.padding(12.dp),
@@ -1679,8 +1683,8 @@ fun ChallengeSettingsDialog(
                                                 else -> ""
                                             }
                                             Surface(
-                                                modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(),
-                                                color = HaIvory.copy(alpha = 0.03f),
+                                                modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth().ha3DInset(RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp)),
+                                                color = Color.Transparent,
                                                 shape = RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp)
                                             ) {
                                                 Text(
@@ -1734,7 +1738,7 @@ fun ChallengeSettingsDialog(
                                     selected = selectedValue == 0, 
                                     onClick = { selectedValue = 0 }, 
                                     label = { Text("Random", fontSize = 14.sp, fontWeight = FontWeight.Bold) }, 
-                                    colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaSurfaceHigh, labelColor = HaIvory)
+                                    colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaBlackRaised, labelColor = HaIvory)
                                 )
                                 options.forEach { opt -> 
                                     val isSel = selectedValue == opt
@@ -1750,7 +1754,7 @@ fun ChallengeSettingsDialog(
                                                 Text("$opt Taps", fontSize = 13.sp, fontWeight = FontWeight.Bold) 
                                             }
                                         }, 
-                                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaSurfaceHigh, labelColor = HaIvory)
+                                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaBlackRaised, labelColor = HaIvory)
                                     ) 
                                 }
                             }
@@ -1770,7 +1774,7 @@ fun ChallengeSettingsDialog(
                                             Text("Random", fontSize = 14.sp, fontWeight = FontWeight.Bold) 
                                         }
                                     }, 
-                                    colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaSurfaceHigh, labelColor = HaIvory)
+                                    colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaBlackRaised, labelColor = HaIvory)
                                 )
                                 options.forEach { opt -> 
                                     val isSel = selectedValue == opt
@@ -1786,7 +1790,7 @@ fun ChallengeSettingsDialog(
                                                 Text("$opt Time", fontSize = 14.sp, fontWeight = FontWeight.Bold) 
                                             }
                                         }, 
-                                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaSurfaceHigh, labelColor = HaIvory)
+                                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaBlackRaised, labelColor = HaIvory)
                                     ) 
                                 }
                             }
@@ -1826,7 +1830,7 @@ fun ChallengeSettingsDialog(
                                         .fillMaxWidth()
                                         .height(54.dp)
                                         .clip(RoundedCornerShape(27.dp))
-                                        .background(HaIvory.copy(alpha = 0.08f))
+                                        .background(HaBlackRaised)
                                         .border(1.dp, HaIvory.copy(alpha = 0.1f), RoundedCornerShape(27.dp))
                                         .padding(6.dp)
                                 ) {
@@ -1930,7 +1934,7 @@ fun ChallengeSettingsDialog(
                                                 }
                                             },
                                             shape = RoundedCornerShape(16.dp),
-                                            color = if (isPicked) SoftAmber.copy(alpha = 0.15f) else if (isExcluded) HaCoral.copy(alpha = 0.1f) else HaIvory.copy(alpha = 0.05f),
+                                            color = if (isPicked) SoftAmber.copy(alpha = 0.15f) else if (isExcluded) HaCoral.copy(alpha = 0.1f) else HaBlackRaised,
                                             border = BorderStroke(
                                                 width = if (isPicked || isExcluded) 2.dp else 1.dp,
                                                 color = if (isPicked) SoftAmber else if (isExcluded) HaCoral.copy(0.6f) else HaIvory.copy(alpha = 0.1f)
@@ -2035,7 +2039,7 @@ fun ChallengeSettingsDialog(
                                         colors = FilterChipDefaults.filterChipColors(
                                             selectedContainerColor = SoftAmber, 
                                             selectedLabelColor = MidnightBlue, 
-                                            containerColor = HaIvory.copy(alpha = 0.05f), 
+                                            containerColor = HaBlackRaised, 
                                             labelColor = HaIvory
                                         )
                                     ) 
@@ -2064,7 +2068,7 @@ fun ChallengeSettingsDialog(
                                                 }
                                             }, 
                                             modifier = Modifier.weight(1f).height(48.dp), 
-                                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaSurfaceHigh, labelColor = HaIvory)
+                                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaBlackRaised, labelColor = HaIvory)
                                         ) 
                                     }
                                 }
@@ -2114,7 +2118,7 @@ fun ChallengeSettingsDialog(
                                             Button(
                                                 onClick = { showQRScanner = true }, 
                                                 modifier = Modifier.fillMaxWidth().height(52.dp), 
-                                                colors = ButtonDefaults.buttonColors(containerColor = HaIvory.copy(alpha = 0.08f)), 
+                                                colors = ButtonDefaults.buttonColors(containerColor = HaBlackRaised), 
                                                 shape = RoundedCornerShape(16.dp), 
                                                 border = BorderStroke(1.dp, HaIvory.copy(alpha = 0.1f))
                                             ) {
@@ -2168,7 +2172,7 @@ fun ChallengeSettingsDialog(
                                                 }
                                             }, 
                                             modifier = Modifier.weight(1f).height(48.dp), 
-                                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaSurfaceHigh, labelColor = HaIvory)
+                                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaBlackRaised, labelColor = HaIvory)
                                         ) 
                                     }
                                 }
@@ -2221,7 +2225,7 @@ fun ChallengeSettingsDialog(
                                         colors = FilterChipDefaults.filterChipColors(
                                             selectedContainerColor = SoftAmber, 
                                             selectedLabelColor = MidnightBlue, 
-                                            containerColor = HaIvory.copy(alpha = 0.05f), 
+                                            containerColor = HaBlackRaised, 
                                             labelColor = HaIvory
                                         )
                                     ) 
@@ -2261,7 +2265,7 @@ fun ChallengeSettingsDialog(
                                         colors = FilterChipDefaults.filterChipColors(
                                             selectedContainerColor = SoftAmber, 
                                             selectedLabelColor = MidnightBlue, 
-                                            containerColor = HaIvory.copy(alpha = 0.05f), 
+                                            containerColor = HaBlackRaised, 
                                             labelColor = HaIvory
                                         )
                                     ) 
@@ -2273,7 +2277,7 @@ fun ChallengeSettingsDialog(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(80.dp)
-                                        .background(HaIvory.copy(alpha = 0.05f), RoundedCornerShape(16.dp))
+                                        .background(HaBlackRaised, RoundedCornerShape(16.dp))
                                         .border(1.dp, HaIvory.copy(alpha = 0.1f), RoundedCornerShape(16.dp)),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -2342,7 +2346,7 @@ fun ChallengeSettingsDialog(
                                         colors = FilterChipDefaults.filterChipColors(
                                             selectedContainerColor = SoftAmber, 
                                             selectedLabelColor = MidnightBlue, 
-                                            containerColor = HaIvory.copy(alpha = 0.05f), 
+                                            containerColor = HaBlackRaised, 
                                             labelColor = HaIvory
                                         )
                                     ) 
@@ -2365,7 +2369,7 @@ fun ChallengeSettingsDialog(
                                         onClick = { selectedValue = opt },
                                         modifier = Modifier.height(50.dp),
                                         shape = RoundedCornerShape(12.dp),
-                                        color = if (isSel) SoftAmber.copy(alpha = 0.15f) else HaIvory.copy(alpha = 0.05f),
+                                        color = if (isSel) HaGoldSelectedFill else HaBlackRaised,
                                         border = BorderStroke(1.dp, if (isSel) SoftAmber else HaIvory.copy(alpha = 0.1f))
                                     ) {
                                         Box(contentAlignment = Alignment.Center) {
@@ -2407,7 +2411,7 @@ fun ChallengeSettingsDialog(
                                             onClick = { selectedExtra = if (mode == 1) "motion" else "camera" },
                                             modifier = Modifier.weight(1f).height(74.dp),
                                             shape = RoundedCornerShape(18.dp),
-                                            color = if (isSel) SoftAmber.copy(alpha = 0.15f) else HaIvory.copy(alpha = 0.05f),
+                                            color = if (isSel) HaGoldSelectedFill else HaBlackRaised,
                                             border = BorderStroke(1.5.dp, if (isSel) SoftAmber else HaIvory.copy(alpha = 0.1f))
                                         ) {
                                             Box(modifier = Modifier.fillMaxSize()) {
@@ -2465,7 +2469,7 @@ fun ChallengeSettingsDialog(
                                                 }
                                             }, 
                                             modifier = Modifier.weight(1f).height(48.dp), 
-                                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaSurfaceHigh, labelColor = HaIvory)
+                                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = SoftAmber, selectedLabelColor = MidnightBlue, containerColor = HaBlackRaised, labelColor = HaIvory)
                                         ) 
                                     }
                                 }
@@ -2475,7 +2479,7 @@ fun ChallengeSettingsDialog(
                                         Button(
                                             onClick = { cameraLauncher.launch(null) }, 
                                             modifier = Modifier.fillMaxWidth().height(52.dp), 
-                                            colors = ButtonDefaults.buttonColors(containerColor = HaIvory.copy(alpha = 0.08f)), 
+                                            colors = ButtonDefaults.buttonColors(containerColor = HaBlackRaised), 
                                             shape = RoundedCornerShape(16.dp), 
                                             border = BorderStroke(1.dp, HaIvory.copy(alpha = 0.1f))
                                         ) {
@@ -2524,7 +2528,7 @@ fun ChallengeSettingsDialog(
 
                     Button(
                         onClick = { onPreview(challenge, selectedValue, selectedDifficulty, selectedExtra) },
-                        modifier = Modifier.fillMaxWidth().height(52.dp).ha3DPanel(RoundedCornerShape(16.dp), elevation = 8.dp),
+                        modifier = Modifier.fillMaxWidth().height(52.dp).ha3DBlack(RoundedCornerShape(16.dp), elevation = 8.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
                         shape = RoundedCornerShape(16.dp)
                     ) {
@@ -2880,7 +2884,7 @@ fun InfoBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = HaPanel,
+        containerColor = HaPanelDeep,
         dragHandle = {
             Box(
                 modifier = Modifier
@@ -2990,7 +2994,7 @@ fun WakeUpTutorialBottomSheet(onDismiss: () -> Unit) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = HaPanel,
+        containerColor = HaPanelDeep,
         dragHandle = {
             Box(
                 modifier = Modifier

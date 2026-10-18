@@ -1572,19 +1572,11 @@ fun RepeatSelectionModal(
     ) {
         Surface(
             shape = RoundedCornerShape(28.dp),
-            color = HaInk,
-            border = BorderStroke(
-                1.dp,
-                Brush.verticalGradient(
-                    listOf(
-                        HaGoldPale.copy(alpha = 0.25f),
-                        HaIvory.copy(alpha = 0.05f)
-                    )
-                )
-            ),
+            color = Color.Transparent,
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .padding(16.dp)
+                .ha3DPanelDeep(RoundedCornerShape(28.dp))
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),

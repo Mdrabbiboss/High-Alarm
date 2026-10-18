@@ -699,15 +699,9 @@ fun GoodMorningDialog(onDismiss: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth(0.85f)
                     .wrapContentHeight()
-                    .shadow(
-                        elevation = 24.dp,
-                        shape = RoundedCornerShape(32.dp),
-                        ambientColor = HaGoldMid.copy(alpha = 0.4f),
-                        spotColor = HaGoldMid.copy(alpha = 0.4f)
-                    ),
-                color = MidnightBlue.copy(alpha = 0.98f),
-                shape = RoundedCornerShape(32.dp),
-                border = BorderStroke(1.dp, SoftAmber.copy(alpha = 0.4f)) // Gold border
+                    .ha3DPanelDeep(RoundedCornerShape(32.dp), elevation = 28.dp),
+                color = Color.Transparent,
+                shape = RoundedCornerShape(32.dp)
             ) {
                 // Outer subtle glow background
                 Box(modifier = Modifier.fillMaxWidth()) {
@@ -924,7 +918,7 @@ fun AlarmMainScreen(
                 modifier = Modifier
                     .fillMaxWidth(0.92f)
                     .padding(16.dp)
-                    .ha3DPanel(RoundedCornerShape(28.dp), gold = true, elevation = 20.dp)
+                    .ha3DPanelDeep(RoundedCornerShape(28.dp))
             ) {
                 Column(
                     modifier = Modifier.padding(26.dp),
@@ -1817,7 +1811,7 @@ fun DeleteConfirmationDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = HaPanel,
+        containerColor = HaPanelDeep,
         title = {
             Text(
                 text = "Delete Alarm",
