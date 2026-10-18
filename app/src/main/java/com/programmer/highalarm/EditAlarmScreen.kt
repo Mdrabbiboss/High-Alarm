@@ -2719,29 +2719,24 @@ fun ChallengeItem(
                 }
 
                 // raised 3D orb that holds the icon
-                if (challenge.id != "pushup" && challenge.id != "squat") {
-                    Box(
-                        modifier = Modifier
-                            .size(46.dp)
-                            .ha3DOrb()
-                    )
-                }
+                Box(
+                    modifier = Modifier
+                        .size(46.dp)
+                        .ha3DOrb()
+                )
                 when (challenge.id) {
-                    "pushup", "squat" -> Box(
-                        // a small recessed 3D stage instead of the round orb
-                        modifier = Modifier
-                            .fillMaxWidth(0.9f)
-                            .height(50.dp)
-                            .ha3DInset(RoundedCornerShape(14.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        AnimatedExerciseIcon(
-                            kind = if (challenge.id == "pushup") ExerciseKind.PushUp else ExerciseKind.Squat,
-                            colors = AthleteGold,
-                            modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp, vertical = 2.dp),
-                            showFloor = true
-                        )
-                    }
+                    "pushup" -> AnimatedExerciseIcon(
+                        kind = ExerciseKind.PushUp,
+                        colors = iconColorPalette,
+                        modifier = Modifier.size(34.dp),
+                        showFloor = false
+                    )
+                    "squat" -> AnimatedExerciseIcon(
+                        kind = ExerciseKind.Squat,
+                        colors = iconColorPalette,
+                        modifier = Modifier.size(34.dp),
+                        showFloor = false
+                    )
                     else -> Icon(
                     imageVector = challenge.icon,
                     contentDescription = challenge.name,
