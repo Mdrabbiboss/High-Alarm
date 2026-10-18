@@ -27,6 +27,8 @@ import androidx.navigation.navArgument
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -47,6 +49,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -1694,43 +1697,16 @@ fun AlarmCard(
                         }
                     }
 
-                    // Challenge Badge
-                    Surface(
+                    // Challenge badge: 3D coins of the chosen challenges + a short label
+                    val activeChallenges = alarm.challenges
+                        .filter { it.id != "none" }
+                        .mapNotNull { config -> getAllChallenges().find { it.id == config.id } }
+                    ChallengeBadge(
+                        challenges = activeChallenges,
+                        enabled = alarm.isEnabled,
                         onClick = onEditChallenge,
-                        color = HaIvory.copy(alpha = 0.05f),
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.padding(top = 10.dp),
-                        border = BorderStroke(1.dp, (if (alarm.isEnabled) SoftAmber else HaMuted).copy(alpha = 0.2f))
-                    ) {
-                        val activeChallenges = alarm.challenges.filter { it.id != "none" }.mapNotNull { config -> 
-                            getAllChallenges().find { it.id == config.id }?.name 
-                        }
-                        val labelText = if (activeChallenges.isEmpty()) "None" else activeChallenges.joinToString(", ")
-                        val firstIcon = alarm.challenges.firstOrNull { it.id != "none" }?.let { config ->
-                            getAllChallenges().find { it.id == config.id }?.icon
-                        } ?: Icons.Default.Block
-                        
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = firstIcon,
-                                contentDescription = null,
-                                tint = if (alarm.isEnabled) SoftAmber else HaMuted,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = labelText,
-                                fontSize = 11.sp,
-                                color = if (alarm.isEnabled) SoftAmber else HaMuted,
-                                fontWeight = FontWeight.ExtraBold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
+                        modifier = Modifier.padding(top = 10.dp).alpha(cardAlpha.coerceAtLeast(0.6f))
+                    )
                 }
 
                 if (!isSelectionMode) {
@@ -1847,4 +1823,91 @@ fun DeleteConfirmationDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false),
         modifier = Modifier.fillMaxWidth(0.85f).border(1.dp, HaIvory.copy(alpha = 0.1f), RoundedCornerShape(24.dp))
     )
+}
+
+/**
+ * Compact premium badge for an alarm's wake-up challenges: overlapping 3D gold
+ * coins (one per chosen challenge, max 3 + "+N") and a short label — the
+ * challenge name when there is one, otherwise just the count.
+ */
+@Composable
+private fun ChallengeBadge(
+    challenges: List<Challenge>,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val shape = RoundedCornerShape(50)
+    val accent = if (enabled) HaGold else HaMuted
+    Row(
+        modifier = modifier
+            .clip(shape)
+            .background(Brush.verticalGradient(listOf(Color(0xFF0F0F13), Color(0xFF18181D))))
+            .border(
+                BorderStroke(1.dp, Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.7f), accent.copy(alpha = 0.32f)))),
+                shape
+            )
+            .clickable(onClick = onClick)
+            .padding(start = 4.dp, end = 12.dp, top = 4.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        val coin = 24.dp
+        val step = 17.dp // coins overlap a little
+        if (challenges.isEmpty()) {
+            ChallengeCoin(Icons.Default.Bedtime, active = false)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("No challenge", fontSize = 11.sp, color = HaMuted, fontWeight = FontWeight.Bold)
+        } else {
+            val shown = challenges.take(3)
+            val extra = challenges.size - shown.size
+            val count = shown.size + if (extra > 0) 1 else 0
+            Box(modifier = Modifier.width(coin + step * (count - 1)).height(coin)) {
+                shown.forEachIndexed { i, ch ->
+                    ChallengeCoin(ch.icon, active = enabled, modifier = Modifier.offset(x = step * i))
+                }
+                if (extra > 0) {
+                    Box(
+                        modifier = Modifier
+                            .offset(x = step * shown.size)
+                            .size(coin)
+                            .background(HaPanel, CircleShape)
+                            .padding(1.5.dp)
+                            .ha3DOrb(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("+$extra", fontSize = 9.sp, color = accent, fontWeight = FontWeight.Black)
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = if (challenges.size == 1) challenges.first().name else "${challenges.size} challenges",
+                fontSize = 11.sp,
+                color = if (enabled) HaGoldLight else HaMuted,
+                fontWeight = FontWeight.ExtraBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+private fun ChallengeCoin(icon: ImageVector, active: Boolean, modifier: Modifier = Modifier) {
+    // a thin ring in the card colour separates overlapping coins
+    Box(
+        modifier = modifier
+            .size(24.dp)
+            .background(HaPanel, CircleShape)
+            .padding(1.5.dp)
+            .then(if (active) Modifier.ha3DCoin(HaTone.Gold, elevation = 2.dp) else Modifier.ha3DOrb()),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = if (active) haToneInk(HaTone.Gold) else HaMuted,
+            modifier = Modifier.size(12.dp)
+        )
+    }
 }
