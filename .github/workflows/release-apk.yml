@@ -1,4 +1,4 @@
-name: Build Release APK
+name: Build APK + AAB
 
 on:
   push:
@@ -24,30 +24,56 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Build signed release APK
+      # Uses your own key if the repo has these secrets:
+      # KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD.
+      # Otherwise falls back to the test key in ci/.
+      - name: Prepare signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+            echo "SIGN_FILE=$RUNNER_TEMP/upload.jks" >> $GITHUB_ENV
+            echo "SIGN_STORE_PW=$KEYSTORE_PASSWORD" >> $GITHUB_ENV
+            echo "SIGN_ALIAS=$KEY_ALIAS" >> $GITHUB_ENV
+            echo "SIGN_KEY_PW=$KEY_PASSWORD" >> $GITHUB_ENV
+          else
+            echo "SIGN_FILE=${{ github.workspace }}/ci/highalarm-release.jks" >> $GITHUB_ENV
+            echo "SIGN_STORE_PW=HighAlarm2026" >> $GITHUB_ENV
+            echo "SIGN_ALIAS=highalarm" >> $GITHUB_ENV
+            echo "SIGN_KEY_PW=HighAlarm2026" >> $GITHUB_ENV
+          fi
+
+      - name: Build debug APK, release APK and release AAB
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon assembleRelease \
-            -PMYAPP_RELEASE_STORE_FILE=${{ github.workspace }}/ci/highalarm-release.jks \
-            -PMYAPP_RELEASE_STORE_PASSWORD=HighAlarm2026 \
-            -PMYAPP_RELEASE_KEY_ALIAS=highalarm \
-            -PMYAPP_RELEASE_KEY_PASSWORD=HighAlarm2026
+          ./gradlew --no-daemon assembleDebug assembleRelease bundleRelease \
+            -PMYAPP_RELEASE_STORE_FILE="$SIGN_FILE" \
+            -PMYAPP_RELEASE_STORE_PASSWORD="$SIGN_STORE_PW" \
+            -PMYAPP_RELEASE_KEY_ALIAS="$SIGN_ALIAS" \
+            -PMYAPP_RELEASE_KEY_PASSWORD="$SIGN_KEY_PW"
 
-      - name: Rename APK
+      - name: Collect outputs
         run: |
           mkdir -p out
-          cp app/build/outputs/apk/release/*arm64-v8a*.apk out/HighAlarm-premium-arm64.apk
-          cp app/build/outputs/apk/release/*armeabi-v7a*.apk out/HighAlarm-premium-armv7.apk
+          cp app/build/outputs/apk/release/*arm64-v8a*.apk out/HighAlarm-release-arm64.apk
+          cp app/build/outputs/apk/release/*armeabi-v7a*.apk out/HighAlarm-release-armv7.apk
+          cp app/build/outputs/apk/debug/*arm64-v8a*.apk out/HighAlarm-debug-arm64.apk
+          cp app/build/outputs/bundle/release/*.aab out/HighAlarm-release.aab
           ls -la out
 
       - uses: actions/upload-artifact@v4
         with:
-          name: HighAlarm-release-apk
-          path: out/*.apk
+          name: HighAlarm-build-${{ github.run_number }}
+          path: out/*
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.run_number }}
-          name: HighAlarm Premium build ${{ github.run_number }}
-          files: out/*.apk
+          name: HighAlarm build ${{ github.run_number }}
+          make_latest: true
+          files: out/*
