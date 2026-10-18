@@ -538,8 +538,9 @@ fun PremiumBellIcon(isSmallScreen: Boolean) {
 
 @Composable
 fun InitialDismissState(time: String, label: String, isSnoozeEnabled: Boolean, onDismissClick: () -> Unit, onSnoozeClick: (Int) -> Unit) {
-    val configuration = LocalConfiguration.current
-    val isSmallScreen = configuration.screenHeightDp < 600
+    // measured in the app's own dp (the theme may normalise the DPI)
+    val screenPx = LocalContext.current.resources.displayMetrics.heightPixels
+    val isSmallScreen = with(LocalDensity.current) { screenPx.toDp() } < 600.dp
 
     Box(modifier = Modifier.fillMaxSize()) {
         

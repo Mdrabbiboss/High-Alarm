@@ -54,6 +54,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -907,7 +908,8 @@ fun VibrationSelectionDialog(
     onSelect: (String) -> Unit
 ) {
     val context = LocalContext.current
-    val maxH = (LocalConfiguration.current.screenHeightDp * 0.82f).dp
+    val screenPx = LocalContext.current.resources.displayMetrics.heightPixels
+    val maxH = with(LocalDensity.current) { (screenPx * 0.82f).toDp() }
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)

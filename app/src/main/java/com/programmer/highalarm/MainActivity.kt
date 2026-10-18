@@ -50,6 +50,9 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -849,6 +852,24 @@ fun GoodMorningDialog(onDismiss: () -> Unit) {
 
 @Composable
 fun AppTheme(content: @Composable () -> Unit) {
+    // Keep the layout proportions sane at any display size / DPI setting:
+    // the screen is treated as at least 360dp and at most 440dp wide (phones),
+    // so extreme settings can't squeeze or stretch the design out of shape.
+    val baseDensity = LocalDensity.current
+    val config = LocalConfiguration.current
+    val shortSideDp = config.smallestScreenWidthDp.toFloat()
+    val appDensity = remember(baseDensity, shortSideDp) {
+        if (shortSideDp <= 0f || shortSideDp >= 600f) {
+            baseDensity // tablets keep the system scale
+        } else {
+            val target = shortSideDp.coerceIn(MIN_LAYOUT_WIDTH_DP, MAX_LAYOUT_WIDTH_DP)
+            Density(
+                density = baseDensity.density * shortSideDp / target,
+                fontScale = baseDensity.fontScale.coerceAtMost(MAX_FONT_SCALE)
+            )
+        }
+    }
+    CompositionLocalProvider(LocalDensity provides appDensity) {
     MaterialTheme(
         colorScheme = darkColorScheme(
             primary = HaGold,
@@ -884,7 +905,12 @@ fun AppTheme(content: @Composable () -> Unit) {
         typography = Typography(), 
         content = content
     )
+    }
 }
+
+private const val MIN_LAYOUT_WIDTH_DP = 360f
+private const val MAX_LAYOUT_WIDTH_DP = 440f
+private const val MAX_FONT_SCALE = 1.3f
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

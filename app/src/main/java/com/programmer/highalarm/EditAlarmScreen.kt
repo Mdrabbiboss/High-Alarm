@@ -41,6 +41,8 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -2734,9 +2736,23 @@ fun ChallengeItem(
     val accentColor = if (isSelected || isTapped) SoftAmber else HaIvory
     val contentAlpha = if (isPremium) 0.85f else 1f
 
+    // Everything in the tile is sized from the tile's own width, so the grid
+    // looks the same at any display size / DPI and nothing is ever cut off;
+    // the tile also grows if its content ever needs more room.
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+    val tileW = maxWidth
+    val density = LocalDensity.current
+    val orbSize = (tileW * 0.40f).coerceIn(36.dp, 60.dp)
+    val iconSize = orbSize * 0.52f
+    val exerciseSize = orbSize * 0.74f
+    val nameSp = with(density) { (tileW * 0.105f).coerceIn(10.dp, 14.dp).toSp() }
+    val subSp = with(density) { (tileW * 0.082f).coerceIn(8.dp, 11.dp).toSp() }
+    val padV = (tileW * 0.10f).coerceIn(8.dp, 16.dp)
+    val gap = (tileW * 0.07f).coerceIn(5.dp, 10.dp)
     Box(
         modifier = Modifier
-            .aspectRatio(0.95f)
+            .fillMaxWidth()
+            .heightIn(min = tileW / 0.95f)
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
@@ -2748,13 +2764,14 @@ fun ChallengeItem(
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick
-            )
+            ),
+        contentAlignment = Alignment.Center
     ) {
         // --- Challenge Content (Always Sharp) ---
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 16.dp, bottom = 8.dp, start = 8.dp, end = 8.dp),
+                .fillMaxWidth()
+                .padding(top = padV, bottom = padV, start = 6.dp, end = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -2785,20 +2802,20 @@ fun ChallengeItem(
                 // raised 3D orb that holds the icon
                 Box(
                     modifier = Modifier
-                        .size(46.dp)
+                        .size(orbSize)
                         .ha3DOrb()
                 )
                 when (challenge.id) {
                     "pushup" -> AnimatedExerciseIcon(
                         kind = ExerciseKind.PushUp,
                         colors = iconColorPalette,
-                        modifier = Modifier.size(34.dp),
+                        modifier = Modifier.size(exerciseSize),
                         showFloor = false
                     )
                     "squat" -> AnimatedExerciseIcon(
                         kind = ExerciseKind.Squat,
                         colors = iconColorPalette,
-                        modifier = Modifier.size(34.dp),
+                        modifier = Modifier.size(exerciseSize),
                         showFloor = false
                     )
                     else -> Icon(
@@ -2806,7 +2823,7 @@ fun ChallengeItem(
                     contentDescription = challenge.name,
                     tint = HaIvory,
                     modifier = Modifier
-                        .size(24.dp)
+                        .size(iconSize)
                         .graphicsLayer(alpha = 0.99f)
                         .drawWithCache {
                             val radialBrush = Brush.radialGradient(
@@ -2822,22 +2839,27 @@ fun ChallengeItem(
                 )
                 }
             }
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(gap))
             Text(
                 text = challenge.name,
-                fontSize = 11.sp,
+                fontSize = nameSp,
+                lineHeight = nameSp * 1.15f,
                 fontWeight = FontWeight.Black,
                 color = if (isPremium) HaIvory.copy(alpha = 0.9f) else accentColor, // High readability
                 textAlign = TextAlign.Center,
-                maxLines = 1
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
-            AutoResizeText(
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
                 text = subtitle,
+                fontSize = subSp,
+                lineHeight = subSp * 1.2f,
                 color = if (isSelected) SoftAmber.copy(alpha = 0.7f) else HaMuted.copy(alpha = contentAlpha),
                 fontWeight = FontWeight.Normal,
-                initialFontSize = 9.sp,
-                minFontSize = 6.sp,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
 
@@ -2890,6 +2912,7 @@ fun ChallengeItem(
                 }
             }
         }
+    }
     }
 }
 
