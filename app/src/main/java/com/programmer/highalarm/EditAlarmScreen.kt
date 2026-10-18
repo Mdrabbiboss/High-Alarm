@@ -2742,24 +2742,27 @@ fun ChallengeItem(
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
     val tileW = maxWidth
     val density = LocalDensity.current
-    val orbSize = (tileW * 0.40f).coerceIn(36.dp, 60.dp)
-    val iconSize = orbSize * 0.52f
-    val exerciseSize = orbSize * 0.74f
-    val nameSp = with(density) { (tileW * 0.105f).coerceIn(10.dp, 14.dp).toSp() }
-    val subSp = with(density) { (tileW * 0.082f).coerceIn(8.dp, 11.dp).toSp() }
-    val padV = (tileW * 0.10f).coerceIn(8.dp, 16.dp)
-    val gap = (tileW * 0.07f).coerceIn(5.dp, 10.dp)
+    // Golden proportions for a square tile: orb ~36%, title ~9%, caption ~7%.
+    val orbSize = (tileW * 0.36f).coerceIn(34.dp, 50.dp)
+    val iconSize = orbSize * 0.50f
+    val exerciseSize = orbSize * 0.72f
+    val nameSp = with(density) { (tileW * 0.092f).coerceIn(9.5.dp, 12.5.dp).toSp() }
+    val subSp = with(density) { (tileW * 0.072f).coerceIn(7.5.dp, 9.5.dp).toSp() }
+    val padV = (tileW * 0.09f).coerceIn(7.dp, 13.dp)
+    val padH = (tileW * 0.07f).coerceIn(5.dp, 10.dp)
+    val gap = (tileW * 0.075f).coerceIn(5.dp, 10.dp)
+    val tileShape = RoundedCornerShape((tileW * 0.17f).coerceIn(14.dp, 20.dp))
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = tileW / 0.95f)
+            .heightIn(min = tileW)
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
             }
             .then(
-                if (isSelected || isTapped) Modifier.ha3DPanelSelected(RoundedCornerShape(20.dp))
-                else Modifier.ha3DPanel(RoundedCornerShape(20.dp), gold = isPremium, elevation = 8.dp)
+                if (isSelected || isTapped) Modifier.ha3DPanelSelected(tileShape)
+                else Modifier.ha3DPanel(tileShape, gold = isPremium, elevation = 8.dp)
             )
             .combinedClickable(
                 onClick = onClick,
@@ -2771,7 +2774,7 @@ fun ChallengeItem(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = padV, bottom = padV, start = 6.dp, end = 6.dp),
+                .padding(vertical = padV, horizontal = padH),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -2850,7 +2853,7 @@ fun ChallengeItem(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height((tileW * 0.015f).coerceIn(1.dp, 3.dp)))
             Text(
                 text = subtitle,
                 fontSize = subSp,
@@ -2865,26 +2868,14 @@ fun ChallengeItem(
 
         // --- Premium Visual Enhancements ---
         if (isPremium) {
-            // Subtle gold highlight line at the bottom
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .width(32.dp)
-                    .height(2.dp)
-                    .padding(bottom = 1.dp)
-                    .clip(CircleShape)
-                    .background(SoftAmber.copy(alpha = 0.3f))
-            )
-
             // High-End Lock Icon Badge (Top Right) responsive to card width
             BoxWithConstraints(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(6.dp)
+                    .padding((tileW * 0.065f).coerceIn(5.dp, 8.dp))
             ) {
-                val cardWidthDp = maxWidth
-                val badgeSize = (cardWidthDp * 0.22f).coerceIn(22.dp, 30.dp)
-                val iconSize = (badgeSize * 0.5f).coerceIn(11.dp, 15.dp)
+                val badgeSize = (tileW * 0.18f).coerceIn(18.dp, 23.dp)
+                val iconSize = (badgeSize * 0.48f).coerceIn(9.dp, 12.dp)
                 val cornerRadius = badgeSize * 0.35f
 
                 Surface(
