@@ -252,6 +252,9 @@ class MainActivity : ComponentActivity() {
                     val navController = rememberNavController()
                     val showGoodMorning by _showGoodMorning.collectAsState()
 
+                    // After a PRO purchase, find out which Gmail it was bought with
+                    PurchaseGmailDetector()
+
                     // Ensure alarms are loaded
                     LaunchedEffect(Unit) {
                         viewModel.loadAlarms(context)

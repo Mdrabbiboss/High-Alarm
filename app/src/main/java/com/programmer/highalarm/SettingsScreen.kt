@@ -385,9 +385,7 @@ fun SettingsScreen(
                     isPremium = settings.isPremium,
                     activePurchaseType = settings.activePurchaseType,
                     onClick = {
-                        if (settings.isPremium && settings.activePurchaseType == "lifetime") {
-                            openPlayOrderHistory(context)
-                        } else if (settings.isPremium) {
+                        if (settings.isPremium) {
                             openManageSubscriptions(context)
                         } else {
                             onNavigateToPremium(true)
@@ -518,18 +516,6 @@ fun openManageSubscriptions(context: Context) {
         } catch (_: Exception) {
             Toast.makeText(context, "Could not open subscription management.", Toast.LENGTH_SHORT).show()
         }
-    }
-}
-
-/** Lifetime is a one-time purchase, so it lives in Play's order history, not in subscriptions. */
-fun openPlayOrderHistory(context: Context) {
-    val intent = Intent(Intent.ACTION_VIEW, "https://play.google.com/store/account/orderhistory".toUri()).apply {
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    }
-    try {
-        context.startActivity(intent)
-    } catch (_: Exception) {
-        openManageSubscriptions(context)
     }
 }
 
@@ -1272,11 +1258,7 @@ fun PremiumUpgradeCard(
 
     val cardSubtitle = if (isPremium) "All features & challenges unlocked" else "Unlock all challenges & features"
 
-    val buttonText = when {
-        !isPremium -> "UPGRADE TO PRO"
-        activePurchaseType == "lifetime" -> "VIEW IN GOOGLE PLAY"
-        else -> "MANAGE SUBSCRIPTION"
-    }
+    val buttonText = if (isPremium) "MANAGE SUBSCRIPTION" else "UPGRADE TO PRO"
 
     Surface(
         modifier = Modifier
@@ -1332,8 +1314,8 @@ fun PremiumUpgradeCard(
                 }
             }
             if (isPremium) {
-                Spacer(modifier = Modifier.height(20.dp))
-                PurchaseDetailsPanel()
+                Spacer(modifier = Modifier.height(18.dp))
+                PurchaseGmailRow()
             }
             Spacer(modifier = Modifier.height(24.dp))
             Button(

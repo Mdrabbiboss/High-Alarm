@@ -318,11 +318,10 @@ class BillingManager private constructor(private val context: Context, @Suppress
 
                     val hasLifetime = activeInAppList.isNotEmpty()
 
-                    // Order ID, date and renewal state for the "Purchase details" card
-                    val owned = activeInAppList.firstOrNull() ?: activeSubsList.firstOrNull()
+                    // PRO is gone (confirmed by Play): forget the saved Gmail so a new purchase detects it again
                     val bothOk = resultSubs.responseCode == BillingClient.BillingResponseCode.OK &&
                         resultInApp.responseCode == BillingClient.BillingResponseCode.OK
-                    if (owned != null || bothOk) PurchaseRecord.update(context, owned)
+                    if (bothOk && !hasActiveSubs && !hasLifetime) PurchaseRecord.clear(context)
 
                     val isProActive = hasActiveSubs || hasLifetime
                     val finalPurchaseType = when {
@@ -371,7 +370,7 @@ class BillingManager private constructor(private val context: Context, @Suppress
 
                     val allPurchases = validSubs + validInApp
                     if (allPurchases.isNotEmpty()) {
-                        PurchaseRecord.update(context, validInApp.firstOrNull() ?: validSubs.firstOrNull())
+                        PurchaseRecord.requestGmail(context)
                         for (p in allPurchases) {
                             if (!p.isAcknowledged) {
                                 handlePurchase(p)
@@ -407,6 +406,10 @@ class BillingManager private constructor(private val context: Context, @Suppress
                 for (purchase in purchases) {
                     handlePurchase(purchase)
                 }
+                // Just bought: find out which Gmail it was bought with
+                if (purchases.any { it.purchaseState == Purchase.PurchaseState.PURCHASED }) {
+                    PurchaseRecord.requestGmail(context)
+                }
             } else if (billingResult.responseCode == BillingClient.BillingResponseCode.USER_CANCELED) {
                 Log.d(tag, "User cancelled purchase flow.")
             } else {
@@ -420,7 +423,6 @@ class BillingManager private constructor(private val context: Context, @Suppress
     private fun handlePurchase(purchase: Purchase) {
         try {
             if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
-                PurchaseRecord.update(context, purchase)
                 val launched = lastLaunchedPlanId
                 val savedType = SettingsViewModel.getInstance().settings.value.activePurchaseType
                 val pType = when {
