@@ -112,19 +112,26 @@ fun PurchaseDetailsPanel() {
             DetailIcon(Icons.Default.AccountCircle)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text("Gmail used to buy", fontSize = 11.sp, color = HaMuted)
-                Spacer(Modifier.height(1.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Gmail used to buy", fontSize = 11.sp, color = HaMuted, modifier = Modifier.weight(1f))
+                    GoldChip(if (email == null) "Save" else "Change", onClick = pickGmail)
+                }
+                Spacer(Modifier.height(2.dp))
+                val shown = email ?: "Not saved yet"
                 Text(
-                    email ?: "Not saved yet",
-                    fontSize = 14.sp,
+                    shown,
+                    // long addresses step down a size so the whole Gmail stays readable on one line
+                    fontSize = when {
+                        shown.length > 30 -> 12.sp
+                        shown.length > 24 -> 13.sp
+                        else -> 14.sp
+                    },
                     fontWeight = FontWeight.SemiBold,
                     color = if (email != null) HaIvory else HaIvory.copy(alpha = 0.5f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            Spacer(Modifier.width(10.dp))
-            GoldChip(if (email == null) "Save" else "Change", onClick = pickGmail)
         }
 
         val i = info
@@ -258,11 +265,11 @@ private fun GoldChip(text: String, onClick: () -> Unit) {
             .background(HaGoldSelectedFill)
             .border(1.dp, HaGold.copy(alpha = 0.55f), shape)
             .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 7.dp),
+            .padding(horizontal = 12.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = HaGoldLight, letterSpacing = 0.4.sp)
+        Text(text, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = HaGoldLight, letterSpacing = 0.4.sp)
     }
 }
 
