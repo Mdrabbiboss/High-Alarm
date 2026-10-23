@@ -318,6 +318,12 @@ class BillingManager private constructor(private val context: Context, @Suppress
 
                     val hasLifetime = activeInAppList.isNotEmpty()
 
+                    // Order ID, date and renewal state for the "Purchase details" card
+                    val owned = activeInAppList.firstOrNull() ?: activeSubsList.firstOrNull()
+                    val bothOk = resultSubs.responseCode == BillingClient.BillingResponseCode.OK &&
+                        resultInApp.responseCode == BillingClient.BillingResponseCode.OK
+                    if (owned != null || bothOk) PurchaseRecord.update(context, owned)
+
                     val isProActive = hasActiveSubs || hasLifetime
                     val finalPurchaseType = when {
                         hasLifetime -> "lifetime"
@@ -365,6 +371,7 @@ class BillingManager private constructor(private val context: Context, @Suppress
 
                     val allPurchases = validSubs + validInApp
                     if (allPurchases.isNotEmpty()) {
+                        PurchaseRecord.update(context, validInApp.firstOrNull() ?: validSubs.firstOrNull())
                         for (p in allPurchases) {
                             if (!p.isAcknowledged) {
                                 handlePurchase(p)
@@ -413,6 +420,7 @@ class BillingManager private constructor(private val context: Context, @Suppress
     private fun handlePurchase(purchase: Purchase) {
         try {
             if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
+                PurchaseRecord.update(context, purchase)
                 val launched = lastLaunchedPlanId
                 val savedType = SettingsViewModel.getInstance().settings.value.activePurchaseType
                 val pType = when {
