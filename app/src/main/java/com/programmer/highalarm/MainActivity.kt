@@ -215,6 +215,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // A reinstall must start at onboarding step 1, even if the phone restored old settings.
+        FreshInstallGuard.check(this)
 
         // Make activity full screen and restrictive
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
