@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Status-bar icon: Ringo's silhouette (bells, body ring, hands, legs). Only alpha is used. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- bells -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M3.16,9.03 A3.6,3.6 0,0,1 8.34,4.03 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M15.66,4.03 A3.6,3.6 0,0,1 20.84,9.03 Z" />
+    <!-- knob + stem -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,2.4 a1.2,1.2 0,1,1 0,2.4 a1.2,1.2 0,1,1 0,-2.4 Z" />
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1.4"
+        android:strokeLineCap="round"
+        android:pathData="M12,4.6 L12,6" />
+    <!-- legs -->
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:pathData="M7.76,18.06 L6.21,19.89 M16.24,18.06 L17.79,19.89" />
+    <!-- body ring -->
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2"
+        android:pathData="M12,6.2 a6.8,6.8 0,1,1 0,13.6 a6.8,6.8 0,1,1 0,-13.6 Z" />
+    <!-- hands -->
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M12,9.4 L12,13 L14.8,14.6" />
+</vector>

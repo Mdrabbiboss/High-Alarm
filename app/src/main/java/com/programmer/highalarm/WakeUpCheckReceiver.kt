@@ -218,7 +218,7 @@ class WakeUpCheckReceiver : BroadcastReceiver() {
 
         // --- 2. Build the Notification ---
         val notification = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_stat_ringo)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setAutoCancel(false)

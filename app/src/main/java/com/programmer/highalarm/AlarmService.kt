@@ -457,7 +457,7 @@ class AlarmService : Service() {
         return NotificationCompat.Builder(this, channelId)
             .setContentTitle("High Alarm Ringing!")
             .setContentText("Wake up and complete your challenge!")
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_stat_ringo)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setFullScreenIntent(fullScreenPendingIntent, true)

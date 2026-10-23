@@ -22,7 +22,7 @@ class AlarmReceiver : BroadcastReceiver() {
                 notificationManager.createNotificationChannel(channel)
             }
             val builder = NotificationCompat.Builder(context, "UpcomingAlertChannel")
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setSmallIcon(R.drawable.ic_stat_ringo)
                 .setContentTitle("⏰ Upcoming Alarm Alert")
                 .setContentText("Your alarm will ring soon at $alarmTime")
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
